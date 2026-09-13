@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Not found — Israel Benito</title>
+<meta name="description" content="That page does not exist.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0A0C">
+<meta name="robots" content="noindex">
+
+<link rel="icon" type="image/png" sizes="32x32" href="assets/marca/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/marca/favicon-16.png">
+<link rel="apple-touch-icon" href="assets/marca/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/css/base.css">
+
+<!--
+  SIN WEBGL, SIN LENIS Y SIN MÓDULOS, y es a propósito: esta página se
+  sirve cuando algo ya ha ido mal, así que lo único que no puede hacer es
+  fallar también. Solo `base.css`, que trae los tokens, la tipografía y el
+  cursor — o sea que es la misma web, pero sin nada que pueda romperse.
+
+  Las rutas van desde la RAÍZ sin subir un nivel, y eso es correcto aunque
+  el 404 aparezca en `/projects/loquesea`: GitHub Pages sirve este mismo
+  archivo desde la raíz del sitio, así que el navegador resuelve contra
+  ella. Con rutas relativas tipo `../` se romperían justo en el caso para
+  el que existe la página.
+-->
+<style>
+  body{
+    min-height:100svh; margin:0;
+    display:grid; place-items:center;
+    padding:var(--margen, 24px);
+    background:var(--void); color:var(--paper);
+    text-align:center;
+  }
+  .perdido{ display:grid; gap:clamp(14px,2.4vh,24px); max-width:46ch }
+  .perdido__codigo{
+    font-family:var(--mono); font-size:calc(12px * var(--tipo)); letter-spacing:.22em;
+    color:var(--signal);
+  }
+  .perdido__titulo{
+    font-family:var(--mono); font-weight:500;
+    font-size:calc(clamp(28px,5vw,52px) * var(--tipo)); line-height:1.08;
+    letter-spacing:-.02em; margin:0;
+  }
+  .perdido__texto{ color:var(--mute); margin:0; line-height:1.6 }
+  .perdido__volver{
+    justify-self:center;
+    font-family:var(--mono); font-size:calc(13px * var(--tipo)); letter-spacing:.1em;
+    color:var(--paper); text-decoration:none;
+    padding:.85em 1.6em;
+    border:1px solid var(--line);
+    transition:border-color .3s, color .3s;
+  }
+  .perdido__volver:hover{ color:var(--signal); border-color:var(--signal) }
+</style>
+</head>
+<body>
+  <main class="perdido">
+    <span class="perdido__codigo">404</span>
+    <h1 class="perdido__titulo">This page doesn't exist</h1>
+    <p class="perdido__texto">The link may be broken, or the page may have moved.</p>
+    <a class="perdido__volver" href="/">Back to the portfolio</a>
+  </main>
+</body>
+</html>

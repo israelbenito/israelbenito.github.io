@@ -1,0 +1,27 @@
+Lenis 1.3.11 — https://github.com/darkroomengineering/lenis (MIT)
+
+Copiado aquí a propósito, no enlazado desde un CDN. La web se abre con
+`serve.ps1` y no tiene NADA que instalar; una etiqueta <script> apuntando
+a internet rompería esa regla en cuanto no haya red, y ataría el sitio a
+que un servidor de terceros siga vivo dentro de dos años.
+
+Qué hace: da PESO al scroll. La rueda ya no salta de golpe, la posición
+persigue al destino con interpolación. Es buena parte de por qué las webs
+de referencia "se sienten" como se sienten.
+
+Por qué esta librería y no otra, y por qué se puede meter aquí sin romper
+lo que ya hay: Lenis hace SCROLL NATIVO DE VERDAD —llama a
+`wrapper.scrollTo({ behavior:'instant' })`, comprobado en su código—, no
+mueve el contenido con un `transform`. Eso importa mucho aquí:
+
+  · `position: sticky` sigue funcionando.
+  · `animation-timeline: view()` sigue funcionando, que es lo que mueve
+    toda la escena de la página de proyecto.
+  · `scrollY` sigue siendo verdad, así que el encogimiento de la portada
+    y el suelo de puntos leen lo de siempre.
+
+Una librería de scroll que use `transform` rompería las tres cosas a la
+vez y sin avisar. Si algún día se actualiza, comprobar eso antes.
+
+Se actualiza a mano: descargar `dist/lenis.mjs` de la versión nueva y
+sustituir este archivo. No hay gestor de paquetes ni lo va a haber.

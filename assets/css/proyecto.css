@@ -1,0 +1,1362 @@
+/* =========================================================
+   PÁGINA DE PROYECTO
+   Una sola hoja para las cuatro. Los tokens y los revelados
+   los pone base.css; aquí solo lo que es de esta página.
+
+   El fondo y el texto los sobrescribe el JS desde la paleta
+   de la ficha: `--fondo`, `--texto` y `--acento` ya estaban
+   declarados en base.css esperando justo a esto.
+
+   ---- La puesta en escena (27 ago 2026) ------------------
+   Esta hoja se rehízo entera. La página tenía el esqueleto
+   correcto —portada, ficha, galería, pases, siguiente— y los
+   revelados disparaban, pero TODOS ERAN EL MISMO REVELADO Y
+   TODO MEDÍA LO MISMO: los tres rótulos de capítulo eran
+   etiquetas de 11 px iguales que un pie de foto, la obra
+   vivía en una columna de 1180 px con medio monitor de negro
+   a los lados, y los dos assets del visor —que es la sección
+   que justifica que esta página exista— compartían fila en
+   dos cuadros de 300 px.
+
+   El arreglo no es "más animación": es JERARQUÍA. La página
+   pasa a ser una secuencia de actos, y cada acto ocupa lo que
+   pesa. Lo espectacular sale del tamaño y del ritmo, no de la
+   cantidad de efectos — la sección 5 del brief sigue
+   prohibiendo rebotes y entradas elásticas, y el scroll sigue
+   libre y sin enganchar.
+   ========================================================= */
+
+/* ---- Lenis ----------------------------------------------
+   Las cuatro reglas que la librería necesita para funcionar, copiadas
+   de su `dist/lenis.css`. Van aquí y no en un archivo aparte porque son
+   cuatro líneas y solo las usan estas páginas — la home todavía no
+   lleva Lenis, ver `activarPeso` en proyecto.js.
+
+   La clase `lenis` la pone la propia librería en el `<html>` al
+   montarse, así que sin JS ninguna de estas reglas se aplica.
+
+   `scroll-behavior: auto` NO viene en su CSS y hay que ponerlo: base.css
+   declara `smooth` para los saltos a un ancla, y con Lenis montado son
+   dos suavizados peleándose por la misma posición. */
+html.lenis, html.lenis body{ height:auto }
+html.lenis{ scroll-behavior:auto }
+.lenis:not(.lenis-autoToggle).lenis-stopped{ overflow:clip }
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch]{ overscroll-behavior:contain }
+.lenis.lenis-smooth iframe{ pointer-events:none }
+
+/* ---- Barra ----------------------------------------------
+   La misma que la home, pero sin el hueco del logo 3D: aquí no hay
+   vuelo del que aterrizar. El texto IB se queda solo, que es lo que
+   leen los lectores de pantalla y lo único que se veía sin WebGL.
+   Si algún día se quiere el monograma también aquí, el sitio es el
+   lienzo de relevo de `sala.js`. */
+.nav{
+  position:fixed; top:0; left:0; right:0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:24px;
+  padding:18px var(--lateral);
+  /* Sin barra opaca: un velo que se retira. La página pasa por debajo
+     y se sigue leyendo el título. */
+  background:linear-gradient(var(--fondo) 22%, transparent);
+}
+/* La marca: el monograma en metal y el texto "IB", que CONVIVEN. El
+   texto es lo que leen los lectores de pantalla y lo único que se ve
+   sin WebGL, así que el logo no lo sustituye — está descartado en la
+   sección 9 del brief.
+
+   Aquí no hay vuelo del que aterrizar, así que el lienzo no espera a
+   nada: se enciende en cuanto la pieza está cargada. En la home entra
+   con el relevo, y por eso allí arranca a opacidad 0. */
+.nav__marca{
+  display:flex; align-items:center; gap:11px;
+  font-family:var(--mono); font-weight:600;
+  letter-spacing:.22em; font-size:calc(13px * var(--tipo));
+}
+.nav__marca-hueco{
+  display:block;
+  width:26px; height:26px;
+  flex:0 0 auto;
+}
+#marca-canvas{
+  display:block; width:100%; height:100%;
+  opacity:0;
+  transition:opacity .5s var(--curva);
+}
+/* La clase la pone `proyecto.js` cuando el `.glb` ya está dibujado. Sin
+   ella el lienzo se queda transparente y no se ve un hueco vacío
+   mientras carga. */
+.nav__marca.puesta #marca-canvas{ opacity:1 }
+.nav__enlaces{ display:flex; gap:clamp(14px,2.4vw,34px); align-items:center }
+.nav__enlaces a{ color:var(--mute); transition:color .3s }
+.nav__enlaces a:hover{ color:var(--texto) }
+.nav__cv{ color:var(--acento) }
+
+/* =========================================================
+   ACTO 0 · LA PORTADA
+   A sangre y a pantalla completa, con el título ENCIMA del render.
+
+   ESTO REVOCA una decisión que estuvo aquí escrita: "Nada de hero con
+   el título encima: el render se ve entero y el texto se lee entero".
+   La revoca Israel el 27 ago 2026 al pedir el hero a sangre, y no es un
+   capricho de estilo — es que las dos cosas no caben juntas. Un render
+   que ocupa la pantalla y un título en una columna aparte dejan el
+   título en una pantalla suya, y entonces la página abre por un
+   rótulo en vez de por la obra.
+
+   La razón que había detrás de aquella regla —que el texto se lea— la
+   resuelve el velo, que es exactamente la misma solución que ya usan
+   los textos de interfaz sobre la sala en la intro: "Sin el velo,
+   cualquier ajuste de color falla en cuanto la cámara se mueve".
+
+   Lo que SÍ se pierde y hay que saberlo: el render ya no se ve entero
+   aquí. El recorte es de `cover`, así que depende de la ventana. Por
+   eso el anclaje lo declara la ficha y no está escrito aquí: en el
+   Terminator va al 0% de altura, de forma que lo que se corte salga
+   SIEMPRE de abajo —donde está el rótulo "TERMINATOR 2 · JUDGMENT
+   DAY" quemado en la imagen, que la sección 8 del brief ya señalaba
+   como lo peor de ese master— y la cabeza del T-800 no se toque nunca.
+   ========================================================= */
+/* ---- La pista y la escena clavada -----------------------
+   *(27 ago 2026, tarde)* La portada deja de medir una pantalla y pasa a
+   ser una PISTA de 2,8. Dentro, la escena se queda clavada con `sticky` y
+   no se mueve; lo que ocurre durante ese recorrido es que el render
+   ENCOGE y después SE VA AL FONDO de la malla de puntos. El reparto en
+   dos actos y el porqué de cada curva están en `proyecto.js`.
+
+   Es el gesto de apertura de sondaven.com, que es la referencia que
+   trajo Israel. Medido allí antes de copiar nada, porque el orden
+   importa más que los números: la imagen escala de 1 a 0,5 de forma
+   PERFECTAMENTE LINEAL a lo largo de unas dos pantallas —sin curva y
+   sin acelerón—, y la opacidad NO se toca hasta el final. Primero
+   encoge del todo a plena vista, y solo cuando ya es pequeña se va.
+   Desvaneciendo a la vez que encoge, el gesto se pierde: se lee como
+   que la imagen se apaga, no como que se aleja.
+
+   2,45 pantallas: 1 la ocupa la escena clavada y quedan 1,45 de recorrido
+   para los dos actos. Eran 2,2 y se recortaron un 18% —a mano, mirando—
+   porque el gesto se hacía largo: el mismo recorrido en menos scroll. El original gastaba 2,2 solo en encoger; aquí ese
+   mismo espacio da para encoger Y para irse, porque el segundo acto
+   ocurre a la vez que sube el capítulo siguiente.
+
+   El número vive aquí y solo aquí: el JS lee la altura real del
+   elemento, no la reescribe. Pero NO se toca solo: está cuadrado con el
+   `margin-top` negativo del capítulo que va detrás y con `FASE_A` en el
+   JS, para que el capítulo asome justo cuando la miniatura arranca hacia
+   el fondo. Quien cambie uno tiene que rehacer los otros dos. */
+.portada{
+  position:relative;
+  height:245svh;
+}
+.portada__fija{
+  position:sticky; top:0;
+  z-index:1;
+  /* NO CAPTURA CLICS, y esto no es un detalle *(11 sep 2026)*.
+     Es una lámina de 100svh con `z-index:1` que se queda pegada arriba
+     mientras la pista de 245svh se recorre, y el contenido de debajo pasa
+     por DEBAJO de ella. Al final del recorrido el grupo está en opacidad
+     0 —invisible— pero la lámina sigue ahí, así que se comía todos los
+     clics de la primera pantalla de contenido.
+
+     Salió con el botón de ampliar del PRIMER render de cada galería, que
+     no respondía mientras los de más abajo sí. Pero no era del botón:
+     **cualquier cosa pulsable que caiga en esa banda llevaba muerta desde
+     que existen estas páginas**, y no se había notado porque hasta ahora
+     no había nada que pulsar ahí.
+
+     Y no se ve con `.click()` desde la consola, que salta la comprobación
+     de qué hay encima: se ve con `elementFromPoint`, o pulsando. */
+  pointer-events:none;
+  /* `svh` y no `vh`: en móvil la barra del navegador que se retrae hace
+     que `100vh` sea más alto que la pantalla, y la escena nacería con
+     un trozo escondido bajo el borde. */
+  height:100svh;
+  min-height:540px;
+  display:flex; flex-direction:column; justify-content:space-between;
+  overflow:hidden;
+  isolation:isolate;
+}
+
+/* LO QUE ENCOGE, Y ENCOGE ENTERO: render, velo y título a la vez. Si el
+   título se quedara quieto mientras la imagen se aleja, se vería que
+   son dos capas pegadas — que es exactamente lo que este gesto tiene
+   que disimular. En la referencia el título va dentro del bloque que
+   escala, y por eso funciona.
+
+   Las tres variables las escribe `proyecto.js` en un solo
+   `requestAnimationFrame`. Sin JS valen 1, 0 y 1: la portada se ve
+   entera y quieta, que es un estado válido. */
+.portada__grupo{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; justify-content:flex-end;
+  transform:translate3d(0, var(--baja, 0px), 0) scale(var(--encoge, 1));
+  opacity:var(--desvanece, 1);
+  will-change:transform, opacity;
+}
+
+.portada__lienzo{ position:absolute; inset:0 }
+.portada__lienzo img{
+  width:100%; height:100%;
+  object-fit:cover;
+  object-position:var(--anclaje, 50% 50%);
+}
+
+/* El velo. Arriba, para que la barra se lea sobre cualquier render;
+   abajo, para el título. Va en un elemento aparte y no en un
+   `background` de la escena porque tiene que quedar POR ENCIMA del
+   lienzo y por debajo del texto. */
+.portada__velo{
+  position:absolute; inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--fondo) 78%, transparent) 0%,
+      transparent 24%),
+    linear-gradient(to top,
+      var(--fondo) 0%,
+      color-mix(in srgb, var(--fondo) 86%, transparent) 13%,
+      transparent 54%);
+}
+
+/* La salida y el aviso de bajar quedan FUERA del grupo que encoge y por
+   encima de él: uno es la única salida de la página y el otro es
+   interfaz. Ninguno de los dos es parte de la composición que se aleja. */
+.portada__salida{
+  position:relative; z-index:2;
+  opacity:var(--sale, 1);
+  padding:clamp(76px,13vh,124px) var(--lateral) 0;
+  /* Lo ÚNICO que se pulsa dentro de la lámina, así que es lo único que
+     recupera los clics. Ver `pointer-events:none` en `.portada__fija`.
+     Va en el div y no en el `<a>` para que el enlace conserve su área de
+     pulsación entera, relleno incluido. */
+  pointer-events:auto;
+}
+
+.portada__texto{
+  position:relative;
+  padding:0 var(--lateral) clamp(40px,7vh,88px);
+  display:grid; gap:clamp(12px,2vh,22px);
+  justify-items:start;
+}
+
+/* El botón de volver. Era `.mono` de 11 px en color apagado y no se veía:
+   es el ÚNICO camino de salida de esta página hacia el índice, así que
+   no puede pedir que lo busques. Ahora es una casilla con filete, del
+   tamaño de un control de verdad.
+
+   Sobre la portada a sangre pasa a estar encima del render, así que
+   además del filete lleva fondo: el filete solo se pierde en cuanto
+   debajo hay una zona clara del propio render. */
+.volver{
+  display:inline-flex; align-items:center; gap:12px;
+  width:max-content;
+  font-size:calc(12px * var(--tipo));
+  color:var(--texto);
+  padding:11px 18px;
+  border:1px solid color-mix(in srgb, var(--texto) 26%, transparent);
+  background:color-mix(in srgb, var(--fondo) 58%, transparent);
+  backdrop-filter:blur(6px);
+  transition:color .35s, border-color .35s, background .35s;
+}
+.volver__flecha{
+  /* La flecha se va hacia la izquierda al pasar el ratón, no se separa
+     empujando el texto: el gesto tiene que apuntar a la salida. */
+  display:inline-block;
+  transition:transform .45s var(--curva);
+}
+.volver:hover{
+  color:var(--acento);
+  border-color:var(--acento);
+  background:color-mix(in srgb, var(--acento) 14%, var(--fondo));
+}
+.volver:hover .volver__flecha{ transform:translateX(-5px) }
+
+.proyecto__titulo{
+  font-family:var(--mono); font-weight:500;
+  /* El tamaño lo limitan el ancho Y EL ALTO. Solo con `vw`, en un
+     portátil apaisado el título salía a 88 px, ocupaba dos líneas de
+     180 px y empujaba las etiquetas fuera de la pantalla. La portada
+     mide una pantalla exacta: lo que hay dentro tiene que caber en
+     ella y no solo en su ancho. */
+  font-size:calc(clamp(32px, min(6.6vw, 9.4vh), 88px) * var(--tipo));
+  line-height:1.01;
+  letter-spacing:-.02em;
+  max-width:15ch;
+  text-shadow:0 2px 34px color-mix(in srgb, var(--fondo) 72%, transparent);
+}
+.proyecto__categorias{
+  display:flex; gap:8px; list-style:none; flex-wrap:wrap;
+}
+.proyecto__categorias li{
+  font-family:var(--mono); font-size:calc(10px * var(--tipo));
+  letter-spacing:.18em; text-transform:uppercase;
+  color:var(--texto);
+  border:1px solid color-mix(in srgb, var(--texto) 24%, transparent);
+  background:color-mix(in srgb, var(--fondo) 50%, transparent);
+  padding:6px 12px;
+}
+
+/* El aviso de que hay que bajar. Con la portada ocupando la pantalla
+   entera, nada dice que haya más página; sin él, el final del scroll
+   se descubre por accidente.
+
+   Sin latido ni flecha rebotando: la sección 5 prohíbe los rebotes y
+   además ya hay una malla moviéndose por detrás. Es una línea fina y
+   una palabra, y se retiran a los primeros 120 px de scroll. */
+.portada__cue{
+  position:absolute; z-index:2;
+  right:var(--lateral); bottom:clamp(40px,7vh,88px);
+  display:grid; justify-items:center; gap:12px;
+  color:var(--mute);
+  font-size:calc(9px * var(--tipo));
+  opacity:var(--cue, 1);
+  transition:opacity .45s linear;
+  pointer-events:none;
+}
+.portada__cue i{
+  display:block; width:1px; height:clamp(30px,5vh,54px);
+  background:linear-gradient(to bottom,
+    color-mix(in srgb, var(--texto) 55%, transparent),
+    transparent);
+}
+
+/* =========================================================
+   LOS CAPÍTULOS
+   Ficha técnica, galería y desglose. Cada uno se anuncia con su
+   número y con un título GRANDE, no con una etiqueta de 11 px.
+
+   El número sale de un contador del CSS y no está escrito en el HTML,
+   y eso importa: las secciones sin material se ocultan con `hidden`
+   —el Ekko no tiene ni un pase, el Hard surface no tiene galería—, y
+   un elemento en `display:none` no incrementa el contador. Así la
+   numeración nunca deja huecos y ninguna página necesita su propia
+   lista de capítulos.
+   ========================================================= */
+main{ counter-reset:capitulo }
+
+.seccion{
+  counter-increment:capitulo;
+  padding:clamp(92px,15vh,190px) var(--lateral) 0;
+}
+/* EL SOLAPE, que es lo que hace que la portada y el primer capítulo sean
+   UN SOLO GESTO y no dos turnos.
+
+   *(27 ago 2026, tarde)* El primer montaje encadenaba: la portada
+   encogía, se quedaba pequeña y se disolvía mientras el visitante seguía
+   scrolleando **sin que la página bajara**, y solo entonces empezaba la
+   ficha. Dos cosas pasando a la vez y una de ellas era esperar.
+
+   Con el margen negativo, el capítulo sube DENTRO de la pista: empieza a
+   asomar justo cuando la miniatura arranca hacia el fondo, así que el
+   mismo gesto de scroll aleja una cosa y trae la otra. Eso es lo que da
+   la profundidad — no el encoger, sino que haya dos planos moviéndose a
+   la vez y en sentidos distintos.
+
+   Los 63svh están cuadrados con el reparto de actos del JS: el capítulo
+   asoma por el borde de abajo en el 57% del recorrido y el acto B
+   arranca en el 55%. NO es un número redondo ni puede serlo — sale de
+   restarle a la pista lo que mide el recorrido hasta ese 57%. Quien toque `FASE_A` allí o la altura de la pista
+   arriba tiene que rehacer esta cuenta.
+
+   Y el `z-index` no es opcional: la escena clavada es un elemento
+   posicionado, así que sin esto pintaría POR ENCIMA del capítulo y la
+   ficha subiría por detrás de la miniatura. Tiene que ser al revés — lo
+   que se aleja va detrás. */
+.portada + .seccion{
+  margin-top:-63svh;
+  position:relative; z-index:2;
+  padding-top:clamp(40px,6vh,80px);
+}
+.seccion__rotulo{
+  display:flex; align-items:baseline;
+  gap:clamp(14px,2.2vw,30px);
+  padding-bottom:clamp(12px,1.6vh,18px);
+}
+.seccion__numero{
+  color:var(--acento);
+  font-size:calc(11px * var(--tipo)); letter-spacing:.24em;
+  flex:none;
+}
+.seccion__numero::before{ content:counter(capitulo, decimal-leading-zero) }
+.seccion__titulo{
+  font-family:var(--mono); font-weight:500;
+  font-size:calc(clamp(26px,4.6vw,62px) * var(--tipo));
+  line-height:1.04;
+  letter-spacing:-.015em;
+  text-transform:none;
+  color:var(--texto);
+}
+/* El filete bajo el rótulo se TRAZA solo al entrar el capítulo, de
+   izquierda a derecha. Antes era un `border-bottom` del propio título y
+   aparecía dibujado de golpe.
+   Tiene que ser un elemento aparte porque el revelado del filete anima
+   `scale`, y escalando el título se deformaría el texto. Es la misma
+   solución que `.cabecera__filete` en la home. */
+.seccion__filete{
+  height:1px;
+  background:var(--line);
+  margin-bottom:clamp(26px,4vh,48px);
+}
+.seccion__entrada{
+  margin-bottom:clamp(30px,5vh,64px);
+  color:var(--mute);
+}
+
+/* ---- Ficha técnica --------------------------------------
+   ANTES de la galería, a propósito. Ver el porqué en proyecto.js.
+   Es el respiro deliberado entre la portada y la obra: pequeña y
+   sobria justo después del golpe. El contraste es lo que hace que el
+   golpe sea golpe — si todo grita, nada grita. */
+/* COLUMNAS DE 300 Y NO DE 190 *(11 sep 2026)*. El 190 valía mientras la
+   ficha tenía tres filas: con tres, `auto-fit` colapsa las pistas vacías y
+   salen tres columnas anchas de todas formas. Al entrar las cifras del
+   Formentor son CINCO, y a 190 el navegador mete las cinco en una fila de
+   298 px cada una — donde "Maya · Substance Painter · V-Ray" no cabe y se
+   parte POR EL GUION, dejando "V-" y "Ray" en dos líneas.
+
+   No se arregla con `word-break` ni con `hyphens`: partir después de un
+   guion es el comportamiento por defecto y esas propiedades no lo tocan.
+   Se arregla dándole sitio. A 300 la rejilla baja a cuatro columnas de
+   383 px y la quinta pasa a la fila siguiente.
+
+   Las páginas de tres filas no se enteran: con tres elementos `auto-fit`
+   da tres columnas igual, antes y ahora. */
+.datos{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+  gap:clamp(22px,3vw,44px);
+}
+.dato dt{ margin-bottom:8px }
+.dato dd{
+  font-family:var(--mono);
+  font-size:calc(clamp(14px,1.5vw,17px) * var(--tipo));
+  line-height:1.45;
+}
+.credito{
+  margin-top:clamp(26px,4vh,44px);
+  padding-left:16px;
+  border-left:2px solid var(--acento);
+  color:var(--texto);
+  max-width:62ch;
+}
+
+/* ---- Galería --------------------------------------------
+   Una columna ancha y centrada. Sin retícula de miniaturas: son cuatro
+   imágenes, no un catálogo, y encogerlas para que quepan más es lo
+   contrario de lo que hace falta. */
+.galeria__lista{
+  display:grid; gap:clamp(24px,5vh,64px);
+  max-width:1180px; margin-inline:auto;
+}
+/* EL VÍDEO VA ANTES QUE LAS IMÁGENES *(13 sep 2026, lo pidió Israel)*:
+   en el Terminator el corto es la pieza y los renders de sus assets van
+   debajo. Está así en las cuatro cáscaras, para que sigan siendo iguales;
+   en las que no tienen vídeo, `#video` va oculto y el orden no cambia nada.
+
+   El aire entre los dos es el mismo que el vídeo tenía por arriba cuando
+   iba detrás. Con `:not([hidden])` y no con un `+` a secas: el vídeo
+   oculto sigue siendo el hermano anterior, y sin la guarda las tres
+   páginas sin corto se llevarían ese margen de más. */
+.video:not([hidden]) + .galeria__lista{ margin-top:clamp(30px,6vh,76px) }
+.galeria__pieza{ position:relative; border:1px solid var(--line); overflow:hidden }
+.galeria__pieza img{ width:100%; height:auto; display:block }
+
+/* EL BOTÓN DE AMPLIAR *(11 sep 2026, lo pidió Israel)*. Arriba a la
+   derecha del render, siempre visible.
+
+   ESTÁ ENCIMA DE LA OBRA y eso choca con la sección 4 — los efectos viven
+   donde no hay obra—. Se avisó y se montó igual, con el aviso delante. Lo
+   que se puede hacer desde aquí es que moleste lo mínimo: 34 px, pegado a
+   la esquina, en los colores de la interfaz y no del acento, y sin
+   sombra. El ámbar se lo gana solo al pasar por encima o al recibir foco.
+
+   NO SE ESCONDE HASTA EL HOVER, aunque sea lo que pide el instinto: un
+   control que aparece al acercar el ratón no existe para quien no tiene
+   ratón, y en táctil sería invisible. Es además la regla del 7 sep — un
+   botón se pulsa, así que está entero desde que se ve. */
+.galeria__ampliar{
+  position:absolute; top:10px; right:10px;
+  display:grid; place-items:center;
+  width:34px; height:34px;
+  padding:0; margin:0;
+  color:var(--mute);
+  background:color-mix(in srgb, var(--panel) 82%, transparent);
+  border:1px solid var(--line);
+  backdrop-filter:blur(3px);
+  cursor:pointer;
+  transition:color .25s var(--curva), border-color .25s var(--curva);
+}
+.galeria__ampliar svg{
+  width:15px; height:15px;
+  fill:none; stroke:currentColor; stroke-width:1.7;
+  stroke-linecap:round; stroke-linejoin:round;
+}
+.galeria__ampliar:hover{ color:var(--acento); border-color:var(--acento) }
+.galeria__ampliar:focus-visible{
+  outline:2px solid var(--acento); outline-offset:2px;
+  color:var(--acento);
+}
+
+/* LAS CIFRAS DE LA PIEZA *(11 sep 2026)*. Van bajo el nombre y encima de
+   la obra, dentro del mismo panel: son parte de la identidad de la pieza,
+   no del control.
+
+   EN FILA Y NO EN COLUMNA, y con separadores en vez de filete: son tres
+   datos cortos que se leen de un vistazo, y apilados le robarían alto a la
+   obra en la única pantalla donde la obra manda. En estrecho se envuelven
+   solas y ahí sí caen a dos líneas, que es cuando toca.
+
+   Los iconos van por MÁSCARA, como los del listado de programas: el color
+   lo pone `--mute` y el archivo solo aporta la silueta. Ver el bloque de
+   `.software__icono` en home.css — misma técnica, y por la misma razón:
+   así no entran colores de marca nuevos en la paleta. */
+.cifras{
+  display:flex; flex-wrap:wrap;
+  align-items:center;
+  gap:6px clamp(14px,1.8vw,26px);
+  margin:0; padding:0; list-style:none;
+  /* MÁS GRANDES *(13 sep 2026, lo pidió Israel)*: de 12,5 a 15 px de
+     tope —16,5 con `--tipo`—. Y el icono pasa de 14 px fijos a `em`, que
+     era la misma proporción, para que crezca con el texto y no se quede
+     pequeño al lado. */
+  font-size:calc(clamp(12px,1.25vw,15px) * var(--tipo));
+  letter-spacing:.06em;
+  color:var(--mute);
+}
+.cifra{ display:flex; align-items:center; gap:.55em }
+.cifra__icono{
+  width:1.05em; height:1.05em; flex:none;
+  background:currentColor;
+  -webkit-mask-position:center;  mask-position:center;
+  -webkit-mask-size:contain;     mask-size:contain;
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+}
+
+/* =========================================================
+   LA LUPA
+   *(10 sep 2026)* El render a tamaño de pantalla. La mecánica y los
+   porqués están en `activarLupa`, en proyecto.js; aquí solo la caja.
+   ========================================================= */
+.lupa{
+  position:fixed; inset:0; z-index:200;
+  display:grid; place-items:center;
+  padding:clamp(10px,2vh,26px);
+  /* Sin scroll: la imagen cabe entera, así que no hay nada que recorrer.
+     `overflow:clip` por si acaso — un píxel de redondeo no puede sacar
+     una barra de scroll dentro de la capa. */
+  overflow:clip;
+  background:rgba(10,10,12,.96);
+  background:color-mix(in srgb, var(--void) 96%, transparent);
+  cursor:zoom-out;
+}
+.lupa[hidden]{ display:none }
+.lupa__pista{ display:grid; place-items:center; max-width:100%; max-height:100% }
+.lupa__img{
+  display:block;
+  /* LA IMAGEN CABE ENTERA *(11 sep 2026, lo pidió Israel)*: la limitan el
+     ancho Y el alto de la ventana, así que se encoge hasta caber y nunca
+     se recorta. Antes iba a tamaño natural con la capa haciendo scroll, y
+     lo que se veía era la obra cortada por los bordes.
+
+     Y NUNCA AMPLIADA: `--ancho` son los píxeles reales del archivo, que
+     declara la ficha en `grande.ancho`. Con `width/height:auto` el
+     navegador coge el menor de los tres topes él solo. */
+  width:auto; height:auto;
+  max-width:min(94vw, var(--ancho, 1400px));
+  max-height:94svh;
+  border:1px solid var(--line);
+  cursor:auto;
+}
+.lupa__cerrar{
+  position:fixed; top:clamp(12px,2.4vh,28px); right:clamp(12px,2.4vh,28px);
+  z-index:1;
+  padding:.5em .8em;
+  font-size:calc(clamp(10px,1.1vw,12px) * var(--tipo)); letter-spacing:.12em;
+  color:var(--mute); background:var(--panel);
+  border:1px solid var(--line);
+  cursor:pointer;
+}
+.lupa__cerrar:hover{ color:var(--texto); border-color:var(--acento) }
+.lupa__cerrar:focus-visible{ outline:2px solid var(--acento); outline-offset:2px }
+
+/* Con la lupa abierta la página de debajo no se mueve. `peso.stop()` corta
+   la rueda y el táctil que pasan por Lenis; esto corta lo que no pasa por
+   él —la barra de scroll y las flechas del teclado—. */
+.sin-scroll{ overflow:hidden }
+
+/* El corto va A SANGRE, y aquí sí sale gratis: es una tira de 2,12:1,
+   que es la proporción que pide el ancho entero. Se sale de la caja
+   de la sección con márgenes negativos.
+
+   PERO CON TOPE. El archivo mide 1280 px de ancho; a sangre en un
+   monitor de 2560 se ampliaría al doble y se vería blando. El tope
+   deja que llene la pantalla en un portátil, que es donde se mira, y
+   se planta antes de estirarse.
+
+   `--vw` Y NO `100vw` *(11 sep 2026)*, y era el desborde de 8 px de la
+   sección 8: `100vw` incluye la barra de scroll, así que esta banda se
+   pasaba 9,5 px por cada lado y la página cogía scroll horizontal.
+   Medido apagando candidatos uno a uno, **era esta banda y solo esta**
+   —el Terminator es la única página con vídeo y la única que desbordaba,
+   1.269 contra 1.261 a 1280 px de ventana—. El diagnóstico que había en
+   el brief culpaba a `.pases__fija` y a `.siguiente__img`, y las dos eran
+   inocentes.
+
+   `--vw` lo publica `medirVentana` en comun.js, porque en CSS puro no se
+   puede: `100%` mide el contenedor, no la raíz. La reserva `100vw` deja
+   la página como estaba si el módulo no llega. */
+.video{
+  position:relative;
+  --ancho-sangre:min(var(--vw, 100vw), 1600px);
+  width:var(--ancho-sangre);
+  margin:clamp(30px,6vh,76px) calc((100% - var(--ancho-sangre)) / 2) 0;
+  border-block:1px solid var(--line);
+  overflow:hidden;
+  line-height:0;
+}
+/* LA PROPORCIÓN DEL VÍDEO, que la ficha declara y aquí solo se aplica.
+
+   Esto fue un recorte y desde el 10 sep 2026 ya no lo es. El derivado
+   traía heredadas las barras negras quemadas del master —1280×720 de
+   contenedor con 1280×604 de imagen— y esta regla las tapaba: arreglaba
+   lo que se veía y no lo que se descargaba. Ahora el recorte está hecho
+   en origen y el archivo mide 1280×606, todo imagen.
+
+   La regla se queda porque el marco tiene que medir ANTES de que el
+   vídeo cargue —va con `preload="none"`, y una caja de altura cero no
+   llega nunca al umbral del observador—. Y el valor no puede ser el
+   16/9 por defecto: el corto es 2,11:1 de verdad.
+
+   `cover` y no `contain` por el redondeo: con la proporción exacta del
+   archivo las dos hacen lo mismo, y ante medio píxel de diferencia
+   `cover` llena y `contain` deja una línea de fondo.
+
+   Y se escala el fotograma en vez de recortar el elemento porque la
+   barra de reproducción NATIVA se dibuja en su borde inferior:
+   recortando el elemento se recortaría también la barra. */
+.video video{
+  width:100%; height:auto; display:block;
+  aspect-ratio:var(--video-encuadre, 16 / 9);
+  object-fit:cover;
+}
+
+/* =========================================================
+   EL DESGLOSE POR PASES
+   La sección que justifica que esta página exista, y la que peor
+   estaba: dos assets compartiendo fila en dos cuadros de 300 px con
+   la botonera debajo, apagada y pequeña. El rifle se veía a 260 px.
+
+   Ahora CADA ASSET ES UN ACTO Y OCUPA SU PANTALLA. Se llega, se tiene
+   la pieza delante grande, y los cuatro pases están al lado y a la
+   altura de los ojos en vez de enterrados en un pie.
+
+   Y se para con aire, no enganchando el scroll: la sección 5 dice
+   "Scroll libre, no enganchado. Enganchar quita control al visitante
+   y en portátiles con trackpad se pelea con el gesto". Lo que hace
+   que te pares es que no haya nada más en la pantalla.
+   ========================================================= */
+.pases__lista{
+  display:grid;
+  gap:clamp(80px,16vh,190px);
+  margin-top:clamp(24px,5vh,60px);
+}
+/* CADA PIEZA ES UN ACTO, TAMBIÉN CUANDO ESTÁ SOLA *(7 sep 2026, lo pidió
+   Israel)*. Hasta hoy, fuera del tren esto era una rejilla de dos
+   columnas —el panel a un lado con la botonera en vertical, la pieza al
+   otro—, y eso dejaba la obra descentrada y el pie leyéndose como la
+   ficha de un catálogo.
+
+   La puesta en escena buena ya estaba escrita: era la de la CARTA
+   APARCADA del tren. Lo que se hizo ese día no fue diseñar nada nuevo,
+   fue sacarla de `.pases--tren` para que valiera en los dos sitios.
+
+   Y ESO ES LO QUE HA ACABADO SOSTENIENDO LA PÁGINA *(10 sep 2026)*: al
+   retirarse el tren, esta composición dejó de ser «lo que ven las
+   páginas sin abanico» y pasó a ser la única que hay, en las cuatro. Si
+   aquel día se hubiera dejado dentro del tren, quitarlo habría dejado
+   el desglose en la rejilla de dos columnas de antes.
+
+   Merece la pena verlo al revés, que es la lección: lo que salvó el
+   desglose no fue el gesto caro, fue haber sacado la composición del
+   sitio donde solo la veía una página.
+
+   La caja vive en `.visor__pieza` y no en `.visor` porque ese
+   envoltorio intermedio era lo que giraba con el tren montado. Ya no
+   gira nada, pero se queda: es lo que centra la columna, y quitarlo
+   sería mover la composición aprobada para ahorrar un div. */
+.visor__pieza{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:clamp(14px,2.2vh,24px);
+}
+/* EL RÓTULO VA ARRIBA, sobre la obra *(7 sep 2026, lo pidió Israel)*.
+   Estaba debajo y pegado a la botonera, en un solo bloque, y eso hacía
+   dos cosas mal: el nombre llegaba después de la pieza que nombra, y se
+   leía como la etiqueta del control en vez de como el título del acto.
+
+   Es el índice y el nombre en una fila, del ancho de su contenido y
+   centrado sobre la pieza. */
+.visor__panel{
+  display:flex;
+  align-items:baseline;
+  gap:clamp(10px,1.4vw,18px);
+}
+.visor__indice{ color:var(--acento); font-size:calc(10px * var(--tipo)); letter-spacing:.24em }
+.visor__nombre{
+  font-family:var(--mono); font-weight:500;
+  font-size:calc(clamp(19px,2.1vw,30px) * var(--tipo));
+  line-height:1.14;
+  letter-spacing:-.01em;
+  text-transform:none;
+  color:var(--texto);
+}
+
+/* Las cuatro imágenes APILADAS en el mismo cuadro, cruzando la
+   opacidad. No se sustituye el `src`: eso parpadea mientras decodifica
+   y recalcula la caja, y el requisito del brief es que no salte nada.
+
+   El tope es de ALTURA y no de anchura: la pieza tiene que caber en la
+   pantalla entera, que es lo que hace que te pares en ella.
+
+   EL MARCO TOMA LA FORMA DE LA OBRA *(10 sep 2026, lo pidió Israel)*, y
+   ya no es un cuadrado. Era cuadrado porque las únicas piezas que lo
+   veían fuera del tren eran cuadradas —el reloj y las sillas—; las que
+   no lo son vivían dentro del tren, que les daba un marco común medido
+   por JavaScript. Retirado el tren, el cuadrado se quedó solo, y con él
+   el rifle dibujándose a 900 × 439 dentro de un recuadro con filete de
+   900 × 900: la mitad del alto vacía y rodeada de línea. La espada, al
+   revés, en 175 px de ancho de los 900.
+
+   `--enc-w` y `--enc-h` son los píxeles reales del derivado, y los
+   escribe `proyecto.js` desde la ficha. Los CUATRO PASES DE UNA PIEZA
+   MIDEN LO MISMO —comparten `caja=` en derivados.ps1—, así que basta
+   una proporción por pieza y el `object-fit:contain` de las capas pasa
+   a ser un encaje exacto en vez de un apaño.
+
+   LA CUENTA DEL ANCHO, que es donde está el truco: el marco se lleva el
+   menor de tres topes —lo que da la columna, los 900 px de siempre, y
+   el ancho que hace que la ALTURA llegue justo a 74svh—. Ese tercero es
+   el que sustituye al viejo tope de altura, y hace falta porque con
+   `aspect-ratio` puesto la altura ya no se puede limitar a mano sin
+   romper la forma de la caja: limitando el ancho, la altura la calcula
+   sola el navegador. De ahí que una pieza vertical como la calavera
+   salga a 668 × 924 en vez de a 900 × 900 — más alta y sin bandas.
+
+   SE DECLARA EN LA FICHA Y NO SE LEE DEL ARCHIVO, al revés de lo que
+   hacía el tren. Allí se podía leer del propio `naturalWidth` porque
+   había un `medir`/`remedir` que volvía a pasar cuando las imágenes
+   cargaban; aquí no hay ese bucle, las capas van con `loading="lazy"`,
+   y el cuadro lleva encima la cortina conducida por scroll — o sea que
+   **tiene que medir antes de tener contenido**, que es la regla del
+   brief. Es exactamente el caso de `videoEncuadre`, y se resuelve
+   igual. El número no hay que adivinarlo: `derivados.ps1` lo imprime
+   al lado de cada archivo cada vez que se ejecuta. */
+.visor__cuadro{
+  position:relative;
+  --enc-w:1;
+  --enc-h:1;
+  aspect-ratio:var(--enc-w) / var(--enc-h);
+  width:min(100%, 900px, calc(74svh * var(--enc-w) / var(--enc-h)));
+  border:1px solid var(--line);
+  /* `clip` y no `hidden`: la pila de dentro lleva una animación
+     conducida por el scroll, y `hidden` haría de este cuadro un
+     contenedor de scroll contra el que esa animación mediría su
+     recorrido — con lo que no se movería nunca. El mismo motivo que en
+     `.palabra`, donde está explicado entero. */
+  overflow:clip;
+}
+/* La pila existe para separar el revelado de las capas. El revelado
+   `escala` recorta y escala a los HIJOS del elemento observado; sin
+   esta capa intermedia caería sobre cada `.visor__capa` y su
+   `transition` de opacidad —la que cruza de un pase a otro— quedaría
+   machacada por la del revelado. Se vería al pulsar Wireframe: en vez
+   de cruzarse, saltaría. */
+.visor__pila{ position:absolute; inset:0 }
+.visor__capa{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:contain;
+  opacity:0;
+  transition:opacity .32s var(--curva);
+  -webkit-user-drag:none; user-select:none;
+}
+.visor__capa--activa{ opacity:1 }
+
+/* EL BEAUTY NO SE APAGA NUNCA: es el fondo de la pila.
+
+   *(28 ago 2026)* Sin esto, al cambiar de pase se veía el fondo de la
+   página a través de la pieza durante un instante. El motivo es que un
+   fundido cruzado no es opaco por el medio: si una capa va de 1 a 0 y
+   la otra de 0 a 1, a mitad de camino las dos están al 50% y lo que
+   sale es 0,5 + 0,5·0,5 = 75% — falta un cuarto, y por ese cuarto se ve
+   lo que hay detrás. No es un fallo de tiempos: es aritmética, y por
+   eso no se arregla acortando la transición.
+
+   Dejando el beauty siempre encendido debajo, los otros tres cruzan
+   SOBRE una base opaca y el hueco no existe. Los cuatro pases son
+   imágenes completas y opacas, así que el de arriba tapa el beauty del
+   todo — no se ve mezcla, se ve el pase.
+
+   Va después de `--activa` a propósito: misma especificidad, gana el
+   último, y así el JS puede seguir poniendo y quitando la clase al
+   beauty sin que pase nada. */
+.visor__capa--fondo{ opacity:1 }
+
+/* LA BOTONERA VA EN FILA, bajo la pieza y cruzando el pie entero.
+
+   Aquí ponía lo contrario —"en columna y no en fila: cuatro pases
+   apilados con su filete se leen como un panel de control; en fila y
+   debajo de la imagen se leían como un pie de tabla"— y ese argumento
+   valía cuando la columna estaba AL LADO de la obra, a la altura de los
+   ojos. Con la pieza centrada y el pie debajo ya no hay columna donde
+   ponerla, y el propio tren la había pasado a fila hace días por una
+   razón que también vale aquí: en columna mide 176 px de alto, que
+   sumados al nombre son 249 px robados a la imagen.
+
+   Lo que la salva de leerse como un pie de tabla es que va compacta y
+   centrada bajo la obra, no cruzando la página de lado a lado: cuatro
+   botones repartidos en 900 px son una tabla; en 360 son un mando.
+
+   *(7 sep 2026)* Ya no cuelga del panel del nombre —ese se subió encima
+   de la pieza—, así que el ancho se lo pone ella. */
+/* LOS BOTONES, MÁS GRANDES *(13 sep 2026, lo pidió Israel)*. Heredaban
+   los 11 px de `.mono`; ahora llevan los suyos, 14 —15,4 con `--tipo`—.
+   El tope del ancho sube en la misma proporción, de 360 a 470: si no, las
+   cuatro columnas iguales se quedan estrechas para "Wireframe". Sigue
+   siendo un mando compacto bajo la obra, no una fila de tabla. */
+.visor__mando{
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:1fr;
+  width:min(100%, 470px);
+  border:1px solid var(--line);
+  font-size:calc(14px * var(--tipo));
+}
+.visor__mando button{
+  padding:11px 6px;
+  text-align:center;
+  color:var(--mute);
+  cursor:pointer;
+  transition:color .3s, background .3s;
+}
+.visor__mando button + button{ border-left:1px solid var(--line) }
+.visor__mando button span{ display:inline-block }
+.visor__mando button:hover{ color:var(--texto) }
+/* EN UN TELÉFONO NO CABEN A 15,4 PX. La botonera ocupa todo el ancho, y
+   medido a 390 px "Wireframe" llenaba su columna al píxel —83 de 83—; a
+   360, los cuatro. Aquí bajan a 12 —13,2 con `--tipo`, que sigue siendo
+   más que los 12,1 de antes— y se quita relleno lateral, que es lo que
+   sobraba. */
+@media (max-width:480px){
+  .visor__mando{ font-size:calc(12px * var(--tipo)) }
+  .visor__mando button{ padding-inline:3px }
+}
+.visor__mando button[aria-pressed='true']{
+  color:var(--acento);
+  background:color-mix(in srgb, var(--acento) 10%, transparent);
+}
+
+/* =========================================================
+   EL TELÓN DE CIERRE
+   Encadenado en bucle. No hay enlace de vuelta al índice aquí: el de
+   volver está arriba, y abajo lo que toca es seguir.
+
+   A sangre y del tamaño de media pantalla. Antes era un título mediano
+   con una miniatura al lado, encima del pie: no cerraba nada y no
+   invitaba a nada. Es el último gesto de la página y el único destino
+   que ofrece, así que tiene que pesar como la portada de la que viene.
+   ========================================================= */
+.siguiente{ margin-top:clamp(100px,17vh,210px) }
+.siguiente__caja{
+  position:relative;
+  min-height:clamp(340px, 62svh, 620px);
+  display:flex; align-items:flex-end;
+  border-block:1px solid var(--line);
+  overflow:hidden;
+  isolation:isolate;
+}
+.siguiente__img{
+  position:absolute; inset:0; z-index:-2;
+  width:100%; height:100%;
+  object-fit:cover; object-position:var(--foco, 50% 50%);
+  /* Apagada en reposo y encendiéndose al pasar el ratón, no al revés:
+     es la misma regla que el carrusel de la home. La pieza que estás
+     mirando no puede apagarse porque retires el ratón. */
+  filter:brightness(.40) saturate(.78);
+  transform:scale(1.02);
+  transition:filter .8s var(--curva), transform 1.3s var(--curva);
+}
+.siguiente__velo{
+  position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:linear-gradient(to top,
+    color-mix(in srgb, var(--fondo) 82%, transparent) 0%,
+    transparent 62%);
+}
+/* El aire lateral es el del sitio, pero el vertical NO puede serlo:
+   `--lateral` crece hasta 440 px en un monitor de 2560 —es media
+   diferencia entre la ventana y la retícula de 1680—, y aplicado
+   también arriba y abajo estiraba la banda a 983 px de alto por
+   puro relleno. */
+.siguiente__texto{
+  position:relative;
+  padding:clamp(34px,6vh,78px) var(--lateral);
+  display:grid; gap:10px;
+}
+.siguiente__titulo{
+  font-family:var(--mono); font-weight:500;
+  font-size:calc(clamp(28px,5.4vw,70px) * var(--tipo));
+  line-height:1.03;
+  letter-spacing:-.02em;
+  transition:color .4s;
+  text-shadow:0 2px 30px color-mix(in srgb, var(--fondo) 70%, transparent);
+}
+.siguiente__enlace{ display:contents }
+.siguiente__enlace:hover .siguiente__titulo{ color:var(--acento) }
+.siguiente__enlace:hover .siguiente__img{
+  filter:brightness(.62) saturate(.95);
+  transform:scale(1.055);
+}
+
+/* ---- Pie ------------------------------------------------ */
+.pie{
+  display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  margin:clamp(70px,11vh,140px) var(--lateral) 0;
+  padding:20px 0 clamp(40px,6vh,70px);
+  border-top:1px solid var(--line);
+  color:var(--mute);
+}
+.pie a{ transition:color .3s }
+.pie a:hover{ color:var(--acento) }
+
+/* =========================================================
+   LA ESCENA · CONDUCIDA POR EL SCROLL
+   *(27 ago 2026, la misma tarde)*
+
+   POR QUÉ SE CAMBIA EL MECANISMO ENTERO. La página tenía revelados
+   —22— y disparaban, y aun así Israel dijo, con razón, que no había ni
+   una animación. No estaba equivocado: **se disparaban tan pronto que
+   se acababan antes de que llegara a mirarlas.**
+
+   Medido en el cuadro del rifle, 900 px de alto en una ventana de
+   1249: el observador pedía un 12% de intersección con el borde de
+   abajo encogido otro 12%, así que saltaba con el borde superior de la
+   caja **al 79% de la pantalla** —la pieza asomando por abajo y aún sin
+   verse— y con su centro **al 115%**, o sea fuera. El revelado duraba
+   1,5 s, que a un ritmo de scroll normal son **1350 px recorridos**:
+   más de una pantalla. Cuando la pieza llegaba a donde se mira, la
+   animación había terminado hacía rato. Para quien lo ve, eso es
+   exactamente lo mismo que no existir.
+
+   Y hay un segundo problema, más de fondo: eran animaciones de
+   DISPARO. Se lanzan y van por su cuenta. Si scrolleas deprisa, te las
+   pierdes; si paras, siguen; si subes, ya no vuelven.
+
+   AHORA LAS CONDUCE EL SCROLL. `animation-timeline: view()`, nativo,
+   sin librerías y sin build. Cada pieza avanza su animación según su
+   posición en la pantalla: si paras, se para; si subes, retrocede. Es
+   imposible llegar tarde, porque el instante en que la miras ES el
+   instante en que está ocurriendo.
+
+   LA REGLA DE LOS RANGOS, que es lo que arregla el fallo de arriba:
+   `cover 0%` es el momento exacto en que el borde de arriba de la
+   pieza toca el borde de abajo de la ventana, y `cover 50%` es el
+   momento exacto en que su centro coincide con el centro de la
+   ventana. Los dos son independientes del tamaño de la pieza y de la
+   ventana. Así que **"empieza al asomar y termina al quedar centrada"
+   se escribe `cover 0%` → `cover 50%`** y vale igual para el rifle que
+   para una fila de la ficha técnica.
+
+   EL ESCALONADO NO SON MILISEGUNDOS, son tramos del recorrido: cada
+   palabra de un título entra un 4% de recorrido después que la
+   anterior. Sale de `--i`, que lo escribe el JS.
+
+   QUÉ PASA DONDE NO SE SOPORTA: nada. El contenido se ve, quieto. Todo
+   lo de aquí abajo vive dentro de un `@supports`, y el estado
+   "escondido" solo existe dentro de los fotogramas clave — así que un
+   navegador que no entienda `view()` no puede dejar la página en
+   blanco, que es el riesgo real de atar el contenido a una animación.
+
+   Y NO SE ENGANCHA EL SCROLL. La sección 5 lo prohíbe y sigue vigente:
+   lo que hace que te pares en una pieza es que ocupe la pantalla y no
+   haya nada más en ella, no que el navegador te frene.
+
+   LA PORTADA NO ENTRA AQUÍ. Está en pantalla desde que carga la
+   página, así que no hay scroll que pueda conducirla: conserva su
+   revelado de disparo, que es lo suyo. Arriba se dispara, abajo se
+   conduce.
+   ========================================================= */
+
+/* Una caja por palabra —la que recorta— y otra dentro —la que se
+   mueve—. Hacen falta las dos: un elemento no puede recortarse a sí
+   mismo y desplazarse a la vez.
+
+   El `padding`/`margin` de abajo no es relleno: sin él, `overflow`
+   corta las colas de las jotas y las ges. */
+/* La letra se LEVANTA desde detrás de la línea base, girando sobre su
+   pie como si se pusiera de pie. Antes subía en bloque por palabra y
+   quedaba correcto y muerto; girando, cada letra tiene volumen y la
+   frase entera se lee como una onda que la cruza.
+
+   El giro necesita la perspectiva en la caja de la palabra, un nivel
+   por encima de lo que gira. Es la misma regla del carrusel y del tren,
+   por tercera vez: puesta más arriba, Chrome aplana la cadena y el
+   `rotateX` sale sin división de perspectiva — la letra se aplasta en
+   vertical en vez de tumbarse. */
+.letra{
+  display:inline-block;
+  transform-origin:50% 100%;
+}
+.palabra{
+  display:inline-block;
+  perspective:620px;
+  /* `clip` Y NO `hidden`, y no es cosmética: `overflow:hidden` convierte
+     al elemento en CONTENEDOR DE SCROLL, y `animation-timeline: view()`
+     resuelve contra el contenedor de scroll más cercano. Con `hidden`,
+     la palabra de dentro medía su recorrido contra su propia caja de
+     una línea —que no scrollea— y la línea de tiempo nacía muerta: la
+     animación se quedaba fija en su último fotograma y no se movía
+     jamás. Se veía como que los títulos no estaban animados.
+
+     `clip` recorta igual y NO crea contenedor de scroll. Quien cambie
+     esto de vuelta a `hidden` romperá los títulos sin ningún error en
+     consola. Vale lo mismo para `.visor__cuadro`. */
+  overflow:clip;
+  vertical-align:bottom;
+  padding-bottom:.18em;
+  margin-bottom:-.18em;
+}
+
+@supports (animation-timeline: view()){
+  @media (prefers-reduced-motion: no-preference){
+
+    /* La cortina. Descubre de arriba abajo. */
+    @keyframes esc-cortina{
+      from{ clip-path:inset(0 0 100% 0) }
+      to  { clip-path:inset(0 0 0 0) }
+    }
+    /* Lo de dentro de la cortina, que se posa mientras ella abre. Es
+       lo que separa "se descubre una imagen" de "te la enseñan": si el
+       interior no se mueve, la cortina se lee como una persiana. */
+    @keyframes esc-interior{
+      from{ transform:scale(1.10) translateY(-2.5%) }
+      to  { transform:none }
+    }
+    /* La letra, que se levanta desde detrás de la línea base girando
+       sobre su pie. La opacidad acompaña al último tramo del giro y no
+       al principio: apareciendo desde cero se lee como un fundido con
+       un giro encima; entrando ya visible desde detrás de la máscara,
+       se lee como que la letra estaba ahí tumbada. */
+    @keyframes esc-letra{
+      from{ transform:translateY(92%) rotateX(-78deg); opacity:.25 }
+      60% { opacity:1 }
+      to  { transform:none; opacity:1 }
+    }
+    /* El texto corriente. 46 px y no 28: en una ventana de 1249 px, 28
+       son un cuarto de centímetro y no se leen como movimiento. */
+    @keyframes esc-sube{
+      from{ opacity:0; transform:translateY(46px) }
+      to  { opacity:1; transform:none }
+    }
+    @keyframes esc-filete{
+      from{ scale:0 1 }
+      to  { scale:1 1 }
+    }
+
+    /* El enganche común. Sin `animation-duration`: con una línea de
+       tiempo de scroll la duración es `auto` y la marca el rango. Si se
+       le pone una duración en segundos, vuelve a ser una animación de
+       disparo con otro nombre. */
+    .seccion__numero,
+    .seccion__titulo .letra,
+    .seccion__filete,
+    .seccion__entrada,
+    .dato,
+    .credito,
+    .galeria__pieza,
+    .video,
+    .visor__pila,
+    .visor__indice,
+    .visor__nombre,
+    .visor__cuadro,
+    .siguiente__caja,
+    .siguiente__pie,
+    .siguiente__titulo .letra{
+      animation-fill-mode:both;
+      animation-timeline:view();
+    }
+
+    /* ---- El rótulo del capítulo ---------------------------
+       El número entra primero, las palabras del título una a una
+       detrás, y el filete se traza en paralelo. Es la parte que Israel
+       señaló por su nombre: hasta ahora "Desglose por pases" aparecía
+       y punto. */
+    .seccion__numero{
+      animation-name:esc-sube;
+      animation-timing-function:cubic-bezier(.32,.24,.24,1);
+      animation-range-start:cover 1%;
+      animation-range-end:cover 22%;
+    }
+    /* EL TÍTULO TERMINA DE ENTRAR MUY PRONTO, y es a propósito: al 33%
+       del recorrido, o sea con el rótulo todavía a dos tercios de la
+       pantalla. Antes acababa al 48%, que es justo cuando queda
+       centrado — y entonces la obra ya estaba llegando y el título aún
+       se estaba montando. Se lee a medias, que es peor que no animarlo.
+
+       Lo que NO se recorta es el movimiento: la onda sigue cruzando
+       toda la frase, solo que en menos scroll. El paso por letra es de
+       0,9% y cada una tarda un 16%, así que hay siempre seis o siete
+       letras en el aire a la vez. Eso es lo que se lee como fluidez —
+       no la duración, sino cuántas se están moviendo juntas. */
+    .seccion__titulo .letra{
+      animation-name:esc-letra;
+      animation-timing-function:cubic-bezier(.28,.52,.22,1);
+      animation-range-start:cover calc(2% + var(--i, 0) * 0.9%);
+      animation-range-end:cover calc(18% + var(--i, 0) * 0.9%);
+    }
+    /* El filete y la entrada van detrás del título pero también
+       recortados: si el título acaba al 33% y el filete al 50%, el
+       capítulo sigue montándose después de estar leído. */
+    .seccion__filete{
+      transform-origin:left center;
+      animation-name:esc-filete;
+      animation-timing-function:cubic-bezier(.32,.24,.24,1);
+      animation-range-start:cover 8%;
+      animation-range-end:cover 34%;
+    }
+    .seccion__entrada{
+      animation-name:esc-sube;
+      animation-timing-function:cubic-bezier(.32,.24,.24,1);
+      animation-range-start:cover 10%;
+      animation-range-end:cover 38%;
+    }
+
+    /* ---- La ficha técnica --------------------------------- */
+    .dato{
+      animation-name:esc-sube;
+      animation-timing-function:cubic-bezier(.32,.24,.24,1);
+      animation-range-start:cover calc(4% + var(--i, 0) * 5%);
+      animation-range-end:cover calc(40% + var(--i, 0) * 5%);
+    }
+    .credito{
+      animation-name:esc-sube;
+      animation-timing-function:cubic-bezier(.32,.24,.24,1);
+      animation-range-start:cover 8%;
+      animation-range-end:cover 44%;
+    }
+
+    /* ---- La obra -----------------------------------------
+       Empieza al asomar por abajo y termina justo antes de quedar
+       centrada. La cortina va lineal —una cortina que acelera se nota—
+       y el interior se posa con curva, un tramo más largo, para que
+       siga asentándose un instante después de que la cortina abra.
+
+       La cortina va en la CAJA y el movimiento en lo de DENTRO, nunca
+       al revés: la caja es el sujeto que mide la línea de tiempo, y
+       moverla es moverle el suelo a su propia animación. `clip-path`
+       no mueve la caja; `transform` sí la tocaría. */
+    .galeria__pieza,
+    .video,
+    .visor__cuadro{
+      animation-name:esc-cortina;
+      animation-timing-function:linear;
+      animation-range-start:cover 0%;
+      animation-range-end:cover 46%;
+    }
+    .visor__pila{
+      animation-name:esc-interior;
+      animation-timing-function:cubic-bezier(.34,.22,.22,1);
+      animation-range-start:cover 0%;
+      animation-range-end:cover 56%;
+    }
+
+    /* ---- El panel del asset -------------------------------
+       Llega DESPUÉS de la pieza, y no por un retardo escrito: el panel
+       va DEBAJO del cuadro, así que asoma por la pantalla cuando la
+       obra ya lleva 900 px descubriéndose. Los rangos de aquí abajo
+       solo terminan de separarlos.
+
+       *(7 sep 2026)* Esto era más fino cuando el panel iba al lado: el
+       argumento de entonces —"los dos centrados en la misma fila, el
+       borde de arriba del cuadro asoma 350 px antes"— dependía de la
+       diferencia de altura entre los dos. Ahora la separación es de
+       orden, no de altura, y el escalonado sale reforzado.
+
+       LA BOTONERA NO SE ANIMA *(7 sep 2026, lo paró Israel)*. Aquí
+       ponía lo contrario: "los cuatro pases entran uno detrás de otro,
+       es lo que convierte cuatro botones en una invitación a
+       pulsarlos". Puesto y mirado, no invita: **los botones son un
+       control, y un control a medio aparecer se lee como que la página
+       no ha terminado de cargar.** Cada uno arrancaba cuatro puntos de
+       recorrido después que el anterior, así que había una franja en la
+       que estaban Beauty y Wireframe y todavía no Checker, y para verlos
+       los cuatro había que seguir bajando.
+
+       La diferencia con el resto de la página es lo que lo decide: un
+       rótulo o una obra son cosas que se MIRAN, y ahí el escalonado es
+       el gesto. Un botón es una cosa que se PULSA, y tiene que estar
+       entero desde que se ve. Por eso se van los dos —el de los botones
+       y el del marco, que existía solo para acompañarlos— y se quedan
+       el índice y el nombre, que son texto. */
+    .visor__indice{
+      animation-name:esc-sube;
+      animation-timing-function:cubic-bezier(.32,.24,.24,1);
+      animation-range-start:cover 4%;
+      animation-range-end:cover 38%;
+    }
+    .visor__nombre{
+      animation-name:esc-sube;
+      animation-timing-function:cubic-bezier(.32,.24,.24,1);
+      animation-range-start:cover 9%;
+      animation-range-end:cover 43%;
+    }
+    /* ---- El telón de cierre ------------------------------- */
+    .siguiente__caja{
+      animation-name:esc-cortina;
+      animation-timing-function:linear;
+      animation-range-start:cover 2%;
+      animation-range-end:cover 44%;
+    }
+    .siguiente__pie{
+      animation-name:esc-sube;
+      animation-timing-function:cubic-bezier(.32,.24,.24,1);
+      animation-range-start:cover 18%;
+      animation-range-end:cover 48%;
+    }
+    /* El telón de cierre puede permitirse ir más tarde y más despacio
+       que un rótulo de capítulo: detrás no viene obra a la que llegar,
+       viene el final de la página. */
+    .siguiente__titulo .letra{
+      animation-name:esc-letra;
+      animation-timing-function:cubic-bezier(.28,.52,.22,1);
+      animation-range-start:cover calc(20% + var(--i, 0) * 0.8%);
+      animation-range-end:cover calc(40% + var(--i, 0) * 0.8%);
+    }
+  }
+}
+
+/* =========================================================
+   EL TREN DEL DESGLOSE, RETIRADO
+   *(10 sep 2026, lo pidió Israel)* Aquí vivía todo lo que colgaba de
+   `.pases--tren`: la pista pegada de varias pantallas, el abanico de
+   cartas, el vuelo de la elegida, el papel que se comba en cinco tiras
+   y el marco común de todas las cartas.
+
+   Se va de las CUATRO páginas. El motivo es de lectura: dentro de la
+   pista el scroll no bajaba la página, alimentaba una animación, y el
+   visitante que baja quiere que la página baje. «Que fluya sin más.»
+
+   LO QUE SE VE AHORA ES LA LISTA DE ARRIBA, la de `.pases__lista` y
+   `.visor__pieza`, que ya era la composición buena desde el 7 sep 2026
+   —rótulo, obra grande y los cuatro pases en fila— porque ese día se
+   sacó de aquí precisamente para que valiera con una pieza sola. No
+   hay nada que rediseñar: lo que se quita es el movimiento, no la
+   puesta en escena.
+
+   Y CON ELLO SE VAN, sin que haga falta tocarlas: `--ancho-vagon`,
+   `--alto-vagon`, `--tramos`, `--tiras`, `--capa`, `--luz`, `--giro`,
+   `--esc`, `--px/--py/--pz`, las clases `.tira`, `.visor__hoja`,
+   `.visor__cuadro--hoja`, `.visor--frente` y `.pases--recorrida`. El
+   `.pases__fija` del HTML se queda, pero ya no lo toca ninguna regla:
+   es un div sin estilos, y ahí muere el desborde de 8 px de su `100vw`.
+
+   El argumento entero está en `docs/pagina-de-proyecto.md` y el código,
+   en el commit anterior a este.
+   ========================================================= */
+/* ---- Estrecho -------------------------------------------
+   Sin probar en un aparato real, como todo el resto de la web. */
+
+/* El visor ya viene apilado de serie, así que aquí solo queda soltarle
+   el tope al cuadro: en un teléfono la pieza se lleva el ancho entero.
+
+   ESTE BLOQUE NO SE APLICABA. Ponía `@media@media`, que no es una media
+   query válida, así que el navegador se comía la regla entera sin decir
+   ni una palabra en consola — y el visor se quedaba en dos columnas en
+   estrecho desde que existen estas páginas. Se ve al mirarlo a 390 px,
+   no leyendo el CSS.
+
+   EL TOPE DE ANCHO YA NO HAY QUE SOLTARLO *(10 sep 2026)*: desde que el
+   marco toma la forma de la obra, el ancho es un `min()` de tres topes
+   y en un teléfono gana `100%` por goleada — los 900 px no llegan a
+   pintar. Lo que se afloja aquí es el tope de ALTURA, de 74svh a 96: en
+   un teléfono la pieza es lo único que hay en la pantalla, así que se le
+   puede dar casi toda.
+
+   AFLOJARLO, NO QUITARLO, y esto se probó al revés primero. Poniendo
+   `width:100%` a secas desaparece el tope de altura, y entonces una
+   pieza como la espada —0,19:1— se estira hasta donde le pida su
+   proporción: medido en una probeta de 390 px, **331 × 1.704**, más de
+   dos pantallas de alto para un solo prop. Con el 96svh se queda en
+   157 × 810, que es alta pero cabe de una vez. Las demás ni se enteran:
+   a 390 px ganan el `100%` igual. */
+@media (max-width: 960px){
+  .visor__pieza{ gap:clamp(18px,3vh,28px) }
+  .visor__cuadro{ width:min(100%, calc(96svh * var(--enc-w) / var(--enc-h))) }
+  /* Aquí la botonera sí cruza entera: en 390 px no hay "de lado a lado
+     de la página", hay un solo ancho y es el de la obra. */
+  .visor__mando{ width:100% }
+}
+
+/* LA PORTADA DEJA DE RECORTAR EN VERTICAL. Un render de 21:16 dentro de
+   una pantalla de teléfono —casi 1:2— pierde media imagen por los
+   lados si va de `cover`. En estrecho vuelve a comportarse como antes:
+   la imagen entera con su proporción, y el título debajo. Se pierde el
+   golpe de la portada a sangre, pero enseñar medio render es peor.
+
+   `--encuadre` lo declara la ficha y por eso sigue existiendo: en
+   ancho manda `--anclaje` y en estrecho manda esto. */
+@media (max-width: 700px){
+  /* Y de paso se acaba la pista: en un teléfono, dos pantallas de
+     scroll para que una imagen encoja son dos pantallas en las que no
+     pasa nada. La escena vuelve a medir lo que mide. */
+  .portada{ height:auto; min-height:0 }
+  .portada__fija{
+    position:static; height:auto; min-height:0;
+    display:block; overflow:visible;
+  }
+  .portada__grupo{
+    position:static;
+    display:block;
+    transform:none; opacity:1;
+  }
+  .portada__lienzo{
+    position:relative; inset:auto;
+    aspect-ratio:var(--encuadre, 16 / 9);
+  }
+  .portada__velo, .portada__cue{ display:none }
+  .portada__salida{ padding-bottom:clamp(16px,3vh,26px); opacity:1 }
+  /* Y sin solape: en estrecho no hay pista contra la que solapar. */
+  .portada + .seccion{ margin-top:0; padding-top:clamp(40px,6vh,80px) }
+  .portada__texto{ padding-top:clamp(20px,4vh,34px) }
+  .proyecto__titulo{ text-shadow:none; max-width:none }
+  .proyecto__categorias li{ background:none }
+  .volver{ backdrop-filter:none; background:none; border-color:var(--line) }
+}
+
+/* El contenido pasa por delante del suelo de puntos. Misma regla que
+   `.capitulo` en la home.
+
+   LA BARRA NO ENTRA AQUÍ, y estaba entrando: esta regla la declaraba
+   `position:relative` con la misma especificidad que el `position:fixed`
+   de arriba y, al ir después, ganaba. La barra llevaba desde que existen
+   estas páginas sin quedarse fija —se iba con el scroll— y además
+   ocupaba sitio en el flujo, así que empujaba la página 58 px hacia
+   abajo: la portada a pantalla completa empezaba por debajo del borde y
+   se salía por el otro. No hacía falta para el suelo de puntos, que ya
+   tiene su `z-index:40`. */
+main, .pie{ position:relative; z-index:1 }
+
+/* Estos cuatro se han ido con el tren *(10 sep 2026)*. Sacaban el
+   rótulo, el filete y la entrada del sangrado a sangre de la vía y les
+   apretaban el aire, porque dentro de la pista el aire no era aire: era
+   sitio que se le quitaba a la pieza durante toda la sección. Sin pista
+   no hay nada de lo que rescatarlos — el capítulo del desglose es ya un
+   capítulo normal y hereda el margen y el ritmo de todos los demás.
+
+   De aquello merece quedar el porqué del MARGEN Y NO EL RELLENO, que
+   costó encontrarlo y vale para cualquier columna de esta web:
+   `box-sizing` es `border-box` en todo el sitio, así que el
+   `max-width:62ch` de la prosa mide la caja ENTERA. Con relleno lateral
+   de 440 px a cada lado el hueco para el texto salía negativo y el
+   párrafo se quedaba en una letra por línea —882 px de alto—. */

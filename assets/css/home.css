@@ -1,0 +1,1136 @@
+/* =========================================================
+   HOME
+   Un solo scroll por capítulos. Scroll libre, no enganchado:
+   enganchar quita control al visitante y en portátiles con
+   trackpad se pelea con el gesto.
+   ========================================================= */
+
+/* ---- Navegación -----------------------------------------
+   No existe sobre la sala. Aparece al dejar el capítulo 00 y
+   ya no se va: a partir de ahí hace falta para salir. */
+
+.nav{
+  position:fixed; inset:0 0 auto 0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:24px;
+  padding:16px var(--lateral);
+  border-bottom:1px solid transparent;
+  background:color-mix(in srgb, var(--fondo) 82%, transparent);
+  backdrop-filter:blur(14px);
+  opacity:0; pointer-events:none;
+  transform:translateY(-100%);
+  transition:opacity .7s var(--curva), transform .7s var(--curva), border-color .7s var(--curva);
+}
+.nav.visible{
+  opacity:1; pointer-events:auto; transform:none;
+  border-bottom-color:var(--line);
+}
+/* Logo y letras conviven: el monograma a la izquierda, el IB en
+   monoespaciada al lado. */
+.nav__marca{
+  display:flex; align-items:center; gap:11px;
+  font-family:var(--mono); font-size:calc(13px * var(--tipo)); letter-spacing:.22em; font-weight:500;
+}
+
+/* El hueco es el destino del vuelo. El logo aterriza justo en esta
+   caja, así que si cambia aquí, cambia el aterrizaje: se mide en
+   tiempo real, no hay ninguna coordenada copiada en el JavaScript. */
+.nav__marca-hueco{
+  display:block;
+  width:26px; height:26px;
+  flex:0 0 auto;
+}
+#marca-canvas{
+  display:block; width:100%; height:100%;
+  opacity:0;
+  transition:opacity .4s var(--curva);
+}
+/* El relevo: el lienzo entra justo cuando la pieza que viene
+   volando se mete debajo de la barra. Al ser el mismo objeto en el
+   mismo sitio y al mismo tamaño, el cambio no se ve. */
+.nav__marca.entregado #marca-canvas{ opacity:1 }
+.nav__enlaces{ display:flex; align-items:center; gap:clamp(14px,2.4vw,34px) }
+.nav__enlaces a{ position:relative; padding:6px 0; color:var(--mute); transition:color .3s }
+.nav__enlaces a:hover{ color:var(--texto) }
+.nav__enlaces a::after{
+  content:''; position:absolute; left:0; right:0; bottom:0; height:1px;
+  background:var(--acento); scale:0 1; transform-origin:left;
+  transition:scale .4s var(--curva);
+}
+.nav__enlaces a:hover::after{ scale:1 1 }
+.nav__cv{ color:var(--texto) !important }
+.nav__cv[aria-disabled='true']{ color:var(--mute) !important; opacity:.55 }
+
+@media (max-width:640px){
+  .nav__enlaces .oculta-movil{ display:none }
+}
+
+/* ---- Capítulo 00 · la sala ------------------------------ */
+
+.sala{
+  position:relative; z-index:1;
+  height:100svh; min-height:520px;
+  overflow:hidden;
+  /* El fondo se retira en el último tramo para que asome el suelo de
+     puntos que hay detrás. Antes era un color plano y ahí empezaba la
+     banda negra que separaba la intro de Trabajos. */
+  background:linear-gradient(to bottom, #05060A 0%, #05060A 74%, transparent 100%);
+}
+
+/* La costura entre la sala y el capítulo 01.
+
+   No es un degradado que disimule el corte: es que el suelo de la nave
+   y el suelo de puntos sean el MISMO suelo. El lienzo de la sala se
+   desvanece por abajo y por detrás aparece la llanura, que se pierde
+   en niebla igual que se perdía el piso de la nave. La sala se
+   disuelve y queda la llanura.
+
+   Antes había tres cosas apartándose del mismo sitio a la vez: este
+   velo cerrando casi en negro, el padding del capítulo, y una máscara
+   que borraba la malla en su primer 14%. Las tres se han quitado o
+   suavizado. */
+.sala canvas{
+  display:block; width:100%; height:100%;
+  -webkit-mask-image:linear-gradient(to bottom, #000 0%, #000 68%, transparent 97%);
+          mask-image:linear-gradient(to bottom, #000 0%, #000 68%, transparent 97%);
+}
+
+/* Velo oscuro arriba y abajo. Sin él, cualquier ajuste de color
+   falla en cuanto la cámara se mueve y cambia el fondo bajo el
+   texto. */
+.sala__velo{
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  /* El de abajo baja de .86 a .40 (26 ago 2026): a .86 cerraba en
+     negro y se comía la malla que ahora asoma por detrás. El texto de
+     abajo se sostiene con su `text-shadow`, y el botón Entrar tiene
+     fondo propio. */
+  background:linear-gradient(to bottom,
+    rgba(4,5,9,.72) 0%, rgba(4,5,9,0) 16%,
+    rgba(4,5,9,0) 74%, rgba(4,5,9,.40) 100%);
+}
+.sala .hud{
+  position:absolute; z-index:3; pointer-events:none;
+  color:var(--mute);
+  text-shadow:0 1px 10px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.8);
+  opacity:0; animation:aparecer 1.4s var(--curva) .5s forwards;
+}
+@keyframes aparecer{ to{ opacity:1 } }
+.hud--tl{ top:30px; left:var(--lateral); color:var(--paper) }
+.hud--tr{ top:30px; right:var(--lateral); text-align:right }
+.hud--bl{ bottom:34px; left:var(--lateral); line-height:2 }
+
+/* Nunca bloquea: el botón está desde el primer frame. */
+.sala__entrar{
+  position:absolute; z-index:4;
+  bottom:30px; right:var(--lateral);
+  color:var(--paper);
+  background:rgba(10,12,18,.4);
+  border:1px solid var(--line);
+  padding:14px 26px;
+  cursor:inherit;
+  opacity:0; animation:aparecer 1.4s var(--curva) .9s forwards;
+  transition:border-color .3s, color .3s, background .3s;
+}
+.sala__entrar:hover{
+  border-color:var(--acento); color:var(--acento);
+  background:color-mix(in srgb, var(--acento) 8%, transparent);
+}
+
+/* Sin WebGL la página sigue viva: fondo plano y el logo en texto. */
+.sala.sin-webgl canvas{ display:none }
+.sala.sin-webgl{
+  background:
+    radial-gradient(120% 80% at 50% 90%, rgba(255,138,43,.14), transparent 60%),
+    #05060A;
+  display:grid; place-items:center;
+}
+.sala.sin-webgl::after{
+  content:'IB';
+  font-family:var(--mono); font-weight:500;
+  font-size:calc(clamp(64px,12vw,150px) * var(--tipo)); letter-spacing:.06em;
+  color:var(--paper);
+}
+
+@media (max-width:720px){
+  .hud--bl{ display:none }
+}
+
+/* EN ESTRECHO EL RÓTULO DE ARRIBA SE QUEDA EN "3D Artist" *(11 sep 2026, lo
+   vio Israel en su móvil)*. Los dos textos de la sala son absolutos —uno a
+   cada esquina— y no se enteran el uno del otro, así que el de la derecha
+   se metía POR DEBAJO del nombre.
+
+   Y no era un roce: medido, a 390 px envuelve a DOS LÍNEAS y su caja llega
+   hasta x=0, o sea que cruza el nombre entero —132 px de solape—. A 480 son
+   72 px en una línea. A 600 ya despeja por 36, y a 720 por 144.
+
+   DE AHÍ EL CORTE EN 640 y no en los 720 de la regla de al lado: a 720
+   sobran 144 px, así que esconder los roles ahí sería quitarlos de un ancho
+   donde caben de sobra. 640 deja margen y no toca la tablet.
+
+   Se esconde el resto y NO se recorta el nombre, que es lo que menos se
+   puede perder. El posicionamiento completo —la sección 2 del brief— sigue
+   entero en el capítulo 02 y en la descripción de la página, así que lo que
+   se pierde aquí es repetición, no información. */
+@media (max-width:640px){
+  .hud__extra{ display:none }
+}
+
+/* ---- Capítulos ------------------------------------------ */
+
+.capitulo{
+  padding:clamp(96px,15vh,190px) var(--lateral);
+  /* Sin margen de ancla: si se deja, al entrar desde la sala
+     queda un dedo de sala asomando por arriba y parece un fallo.
+     El aire lo pone el padding del capítulo. */
+  scroll-margin-top:0;
+}
+.capitulo--contacto{ padding-bottom:clamp(70px,10vh,120px) }
+
+/* ---- El suelo de puntos, detrás de TODA la home ---------
+   Jerarquía: PROYECTOS > TEXTO/UI > MALLA.
+
+   Va FIJO y del tamaño de la ventana, no dentro de un capítulo. Tres
+   cosas salen de ahí: la página entera se lee como un espacio y no
+   como cuatro cajas apiladas; el lienzo mide lo que la ventana y no lo
+   que el documento, así que se pintan muchos menos píxeles; y el
+   movimiento lo pone la cámara con el scroll, que es lo que de verdad
+   cuenta profundidad.
+
+   Sin máscara de bordes: ya no hay bordes que disimular. Lo que había
+   antes arriba era parte del problema de la costura con la sala.
+
+   z-index 0 y no -1: a -1 se iría por debajo del fondo del `body` y
+   no se vería. Los capítulos suben a 1. */
+/* La regla de `.malla` se mudó a base.css el 27 ago 2026, cuando las
+   páginas de proyecto empezaron a montar el mismo lienzo. Vivía aquí y
+   allí no la veían: el canvas se quedaba en flujo, y como `montarMalla`
+   lo dimensiona a lo que mida su caja, crecía realimentándose con el alto
+   del documento hasta los 41 MILLONES de píxeles de lado. La página salía
+   en blanco. Un fondo compartido necesita su CSS en la hoja compartida. */
+.capitulo{ position:relative; z-index:1 }
+
+.cabecera{ margin-bottom:clamp(48px,7vh,96px) }
+.cabecera__linea{
+  display:flex; align-items:baseline; gap:clamp(16px,2.4vw,32px);
+  flex-wrap:wrap;
+}
+.cabecera__num{
+  font-family:var(--mono); font-size:calc(12px * var(--tipo)); letter-spacing:.24em;
+  color:var(--acento);
+  font-variant-numeric:tabular-nums;
+}
+.cabecera__titulo{
+  font-family:var(--mono); font-weight:500;
+  font-size:calc(clamp(26px,4.2vw,52px) * var(--tipo));
+  letter-spacing:.02em; line-height:1.1;
+  text-transform:uppercase;
+}
+.cabecera__filete{
+  height:1px; background:var(--line);
+  margin-top:clamp(20px,3vh,34px);
+}
+.cabecera__pie{
+  display:flex; justify-content:space-between; align-items:center;
+  gap:24px; flex-wrap:wrap;
+  margin-top:16px;
+}
+
+/* ---- Capítulo 01 · índice de trabajos -------------------
+   Una sola vía, no bifurcación. Con cuatro piezas, partir la
+   web en dos caminos deja dos en cada uno y el portfolio
+   parece más pequeño de lo que es. */
+
+.filtro{ display:flex; gap:4px; flex-wrap:wrap }
+.filtro button{
+  padding:7px 14px;
+  color:var(--mute);
+  border:1px solid transparent;
+  cursor:inherit;
+  transition:color .35s, border-color .35s;
+}
+.filtro button:hover{ color:var(--texto) }
+.filtro button[aria-pressed='true']{
+  color:var(--acento);
+  border-color:color-mix(in srgb, var(--acento) 38%, transparent);
+}
+
+/* Carrusel en perspectiva. Sustituye al flujo en columnas que hubo
+   aquí hasta el 26 ago 2026. Aquel resolvía que cada pieza tuviera una
+   proporción distinta —el Cottage es 9:16 y el Terminator 21:10, y en
+   rejilla eso dejaba 600 px de vacío—. Aquí ese problema no existe:
+   todas las tarjetas se recortan a cuadrado, y por dónde se recorta lo
+   dice cada ficha en `hero.foco`. La variedad de proporciones era la
+   solución allí y es el problema aquí.
+
+   La geometría son tarjetas en posición absoluta, transformadas una a
+   una según su distancia al centro. No es un anillo 3D: sin bucle
+   infinito el anillo deja los extremos raros y gira las laterales hacia
+   fuera en vez de hacia dentro, que es justo lo contrario de lo que
+   pide un carrusel de cuatro piezas con tope. */
+
+/* Geometría medida sobre la referencia (gustavobatista.dev), no elegida
+   a ojo: se detectaron los bordes de las tarjetas por columnas de píxeles
+   claros y se sacó la altura de cada borde. En perspectiva el borde más
+   alto es el más cercano, y de ahí salen el ángulo y la profundidad.
+
+   `--sep` va en anchos de tarjeta y `--giro` en grados; los lee el JS,
+   así que una media query puede cambiar la geometría sin tocar código. */
+.carrusel{
+  /* El tope estuvo en 440 px desde que existe el carrusel, y en un
+     monitor ancho eso dejaba la obra nadando: a 2.560 px la pieza
+     central medía 440 y quedaban 500 px de negro a cada lado de la
+     escena. Sube a 620.
+
+     EL TECHO NO ES UN GUSTO, ES EL MATERIAL. La tarjeta recorta a
+     cuadrado con `cover`, así que lo que se agota primero es el lado
+     CORTO del derivado grande.
+
+     El más justo era el Cottage —682 px de ancho— y por eso el tope se
+     quedó en 620. **Ya no lo es** *(7 sep 2026)*: su master pasó a ser
+     el de 4K y su derivado grande mide 1600 × 2847, así que el más
+     justo de los cuatro es ahora el Terminator, `terminator-hero-1392`,
+     que recortado a cuadrado da 1061.
+
+     El tope se queda en 620 de todas formas, porque ya no lo manda el
+     material: lo manda el `58vh` de aquí abajo y la regla de las dos
+     vecinas. Subirlo es una decisión de diseño, no una que permita el
+     archivo, y habría que mirar las cuatro piezas a la vez. Lo que sí
+     hace este margen es que en una pantalla retina la tarjeta deje de
+     ampliarse: a 620 CSS px y 2× hacen falta 1.240, y el Cottage ya los
+     tiene. Y hay que mirar el ANCHO del archivo, no su nombre, que es
+     el lado largo.
+
+     Y va acotado también por la altura de la ventana: en un portátil de
+     900 px una tarjeta de 620 más su pie no cabe en pantalla, y una
+     pieza que no cabe entera no se mira entera.
+
+     EL 31vw NO ES REDONDO NI ES DE ADORNO: es lo que hace que la pieza
+     central y sus DOS VECINAS quepan enteras en la escena. Una vecina
+     llega a (--sep + 0,464) anchos del centro —1,594—, así que caben
+     mientras 1,594 · tarjeta ≤ 50vw, o sea tarjeta ≤ 31,4vw. Ese era el
+     trabajo del `32vw` original, que estaba escrito sin decirlo. Se
+     probó a subirlo a 36 y a 1.280, 1.440, 1.680 y 1.920 px cortaba a
+     las dos vecinas: la única pieza que puede salirse del cuadro es la
+     cuarta. */
+  --tarjeta:clamp(240px, min(31vw, 58vh), 620px);
+
+  /* Hasta dónde llega, desde el centro, la pieza VECINA — la última que
+     tiene que verse entera. Es (--sep + 0,464) anchos; se redondea a
+     0,47 para dejar un pelo de holgura. Lo usa el desvanecido del borde
+     de la escena, unas líneas más abajo. */
+  --vecino:calc((var(--sep) + 0.47) * var(--tarjeta));
+  --sep:1.13;
+  --giro:40;
+  /* Compresión de la separación a partir del segundo vecino. 1 = pareja,
+     como la referencia. Ver el porqué en home.js, función `dist`. */
+  --comp:0.84;
+  /* Grosor de la losa. En la referencia el canto proyecta 31 px sobre una
+     tarjeta de 438: deshecho el escorzo, un 10% del ancho. */
+  --grosor:calc(var(--tarjeta) * 0.10);
+  --persp:calc(var(--tarjeta) * 2.73);
+  /* El filete de las aristas. En la referencia las caras del canto son
+     NEGRAS y todo el volumen lo dibuja una línea clara de un par de
+     píxeles en cada arista. Con caras oscuras y sin filete, sobre fondo
+     negro, no se ve absolutamente nada: no hay volumen que mirar. */
+  --filo:var(--paper);
+  /* Cuánto sobresale la losa de su caja de maquetación. Al girar, el borde
+     cercano crece hasta 1,152 veces el alto, y ese crecimiento sale del
+     centro: la mitad por arriba y la mitad por abajo, o sea (1,152−1)/2 =
+     0,076 del ancho a cada lado. Se redondea a 0,085 para dejar holgura.
+     Sin reservar este aire, arriba lo recorta el overflow de la escena y
+     abajo la pieza se come el título. */
+  --vuelo:calc(var(--tarjeta) * 0.085);
+}
+
+/* El recorte y la perspectiva NO pueden vivir en el mismo elemento:
+   `overflow` sobre algo con contexto 3D lo aplana y las tarjetas se
+   quedan planas. Por eso el recorte va aquí y la perspectiva una capa
+   más adentro. */
+.carrusel__escena{
+  position:relative;
+  overflow:hidden;
+  /* El recorte va por el borde de este padding, así que aquí es donde se
+     reserva el aire de arriba. Sin él, la esquina alta de la pieza girada
+     queda cortada y el cubo no se lee entero. */
+  padding-top:calc(var(--vuelo) + 8px);
+  padding-bottom:14px;
+  /* A sangre: las piezas se van por el borde de la pantalla, no por el
+     de la columna de texto. Es la sala, no una ficha. */
+  margin-inline:calc(var(--lateral) * -1);
+
+  /* EL BORDE DE LA ESCENA SE DESVANECE, y esto arregla un fallo que
+     llevaba aquí desde siempre. La cuarta pieza casi nunca cabe entera:
+     el `overflow` la partía por la mitad con un corte recto, y como cada
+     pieza es una caja DIBUJADA CON FILETE, una caja a la que le falta
+     una arista no se lee como que se sale del cuadro — se lee como que
+     está rota. Israel lo dijo así: "como que le falta un borde blanco".
+
+     No es nuevo del tamaño grande. Medido con el tope viejo de 440 px,
+     la cuarta pieza ya salía cortada a 1.440, 1.680, 1.920 y 2.200 px de
+     ventana, y en los dos extremos del carrusel —con la primera o la
+     última seleccionada— a cualquier ancho. A 2.560 no pasaba, y ese es
+     el monitor en el que se venía mirando.
+
+     La solución es de la casa y no un parche: en la sala de la intro los
+     extremos se disuelven en niebla, y el suelo de puntos hace lo mismo
+     con la distancia. Aquí el cuadro se disuelve por los lados.
+
+     EL ANCHO DEL DESVANECIDO NO ES UN NÚMERO A OJO: empieza exactamente
+     donde acaba la pieza vecina —`--vecino`—, así que por construcción
+     nunca puede apagar una pieza que tenga que verse entera, y se abre
+     solo cuando sobra sitio, que es justo cuando hay una cuarta pieza
+     asomando. Cuando `--vecino` se pasa de media escena —en móvil, donde
+     `--sep` se cierra a 0,80— las paradas quedan desordenadas, el
+     navegador las aplana y la máscara sale opaca entera: sin
+     desvanecido, que es lo que allí hace falta. */
+  --velo:linear-gradient(90deg,
+          transparent 0,
+          #000 calc(50% - var(--vecino)),
+          #000 calc(50% + var(--vecino)),
+          transparent 100%);
+  -webkit-mask-image:var(--velo);
+  mask-image:var(--velo);
+}
+
+.carrusel__pista{
+  position:relative;
+  list-style:none;
+  /* El alto real lo mide el JS sobre la tarjeta más alta: las tarjetas
+     son absolutas y no empujan a su contenedor. Esto es solo el suelo
+     mínimo por si la medida llega tarde. */
+  min-height:var(--tarjeta);
+  /* La línea más importante del componente. Con `pan-y` el navegador se
+     queda el scroll vertical de la página y nos cede el horizontal. Sin
+     esto, arrastrar en un móvil le roba el scroll a la home y la página
+     se queda atascada en este capítulo. */
+  touch-action:pan-y;
+}
+
+/* La tarjeta solo se desplaza; girar, gira la losa. En la referencia los
+   pies NO están girados: los tres títulos comparten línea de base y
+   tamaño, sin rastro de escorzo. Solo la imagen entra en la perspectiva.
+
+   OJO CON LA PERSPECTIVA. La propiedad `perspective` solo alcanza a los
+   HIJOS DIRECTOS del elemento que la declara. Entre la tarjeta y la losa
+   está `.tarjeta__enlace`, que no lleva 3D, así que puesta aquí la cadena
+   se aplanaba y el `rotateY` se renderizaba en ortográfica: la lateral
+   medía exactamente cos(40°) = 0,766 de ancho y su borde cercano no
+   crecía nada. Eso no es una pieza girando, es la imagen encogida en
+   horizontal, y en una miniatura se lee como render deformado.
+
+   Por eso la perspectiva va DENTRO del transform de la losa, con la
+   función `perspective()`. Así es inmune a lo que haya por encima. Si
+   algún día se mueve, la prueba de regresión es: el borde cercano de una
+   lateral debe medir ~1,13 veces el alto de la central. */
+.tarjeta{
+  position:absolute; top:0; left:50%;
+  width:var(--tarjeta);
+  margin-left:calc(var(--tarjeta) / -2);
+  /* SIN transición, y no por descuido. El recorrido entre una pieza y la
+     siguiente ya no lo interpola el CSS: lo lleva un muelle en JS que
+     escribe `transform` y `opacity` en cada frame. El porqué largo está
+     en home.js, "El motor del movimiento"; lo corto es que el CSS solo
+     sabe ir en línea recta del valor de salida al de llegada, y la
+     posición de una pieza no es lineal en su distancia al centro. Poner
+     aquí una transición ahora no suaviza nada: retrasa lo que el muelle
+     ya calcula bien y devuelve el arrastre con retardo. */
+}
+.tarjeta[hidden]{ display:none }
+
+/* ---- La losa -------------------------------------------
+   Caja de verdad, no un plano: cara frontal adelantada medio grosor y
+   dos cantos a los lados. Solo se ve uno de los dos, el del lado hacia
+   el que gira; el otro queda tapado por la propia cara. */
+.tarjeta__losa{
+  position:relative;
+  transform-style:preserve-3d;
+  transform-origin:50% 50%;
+  /* Sin transición, por lo mismo que `.tarjeta`: el giro lo escribe el
+     muelle frame a frame. Y aquí importaba más todavía, porque el giro va
+     recortado a ±1 pieza de distancia: interpolado en línea recta, la
+     losa empezaba a enderezarse desde el primer frame aunque estuviera en
+     el tramo donde el carrusel la mantiene abierta del todo. */
+  /* La cara frontal va adelantada medio grosor, así que hasta de frente
+     se dibuja un 1,9% más grande que su caja y tapaba el filete del suelo.
+     Este margen lo despeja. */
+  margin-bottom:10px;
+}
+/* Cara oscura y aristas en filete, como la referencia. El fondo opaco es
+   lo que hace que el canto tape lo que queda detrás y se lea como sólido
+   y no como un cristal. */
+.tarjeta__canto{
+  position:absolute; top:0;
+  width:var(--grosor); height:100%;
+  background:var(--void);
+  border:1px solid var(--filo);
+  /* El canto del lado contrario mira hacia atrás. El orden en z ya lo
+     taparía con la cara frontal, pero esto lo garantiza sin depender de
+     cómo resuelva el navegador el solapamiento. */
+  backface-visibility:hidden;
+}
+/* Origen en el borde propio y medio grosor hacia atrás: así la caja
+   queda centrada en z y la cara frontal no flota por delante de ella. */
+.tarjeta__canto--izq{
+  left:0;
+  transform-origin:0 50%;
+  transform:translateZ(calc(var(--grosor) / -2)) rotateY(-90deg);
+}
+.tarjeta__canto--der{
+  right:0;
+  transform-origin:100% 50%;
+  transform:translateZ(calc(var(--grosor) / -2)) rotateY(90deg);
+}
+
+/* Aviso al compositor mientras algo se mueve —dedo o muelle—, y solo
+   mientras. `will-change` permanente deja las capas de las cuatro piezas
+   vivas todo el rato, y el carrusel está quieto la mayor parte del
+   tiempo. Las clases las pone y las quita el JS. */
+.carrusel__pista.arrastrando .tarjeta,
+.carrusel__pista.moviendo .tarjeta,
+.carrusel__pista.arrastrando .tarjeta__losa,
+.carrusel__pista.moviendo .tarjeta__losa{ will-change:transform }
+
+.tarjeta__enlace{
+  display:block;
+  /* PRESERVE-3D AQUÍ, Y NO ES DECORACIÓN *(4 sep 2026)*. Sin esto, la
+     ARISTA LEJANA de las dos piezas laterales no se pinta: falta el filete
+     de la derecha del Cottage y el de la izquierda del Ekko, y una caja a la
+     que le falta una arista se lee como rota. Israel lo describió como que
+     al principio salen todas y luego desaparecen, y es literal: mientras el
+     muelle mueve la pieza el recorte no se nota, y al pararse sí.
+
+     No es el fallo del 3 sep —aquel era el `overflow` del marco, y quitarlo
+     hacía falta igual—: debajo quedaba un segundo recorte. La cadena era
+     `.tarjeta` (flat) → `.tarjeta__enlace` (flat) → `.tarjeta__losa`
+     (preserve-3d). El enlace en `flat` es el que APLANA el subárbol 3D de la
+     losa, y Chrome calcula el lienzo de ese aplanado con la caja de la LOSA,
+     no con lo que su contenido proyecta. La cara frontal va adelantada medio
+     grosor, así que por el lado comprimido proyecta 20,7 px POR FUERA de esa
+     caja —medido a 620 px de tarjeta: losa 302,7→784,4, marco 321,3→805,1—,
+     y esos 20,7 px se tiran. Con un `border` de 6 px en rojo se ve sin
+     dudas: se van también los remates del filete de arriba y de abajo.
+
+     Con `preserve-3d` aquí, el aplanado sube a `.tarjeta`, que mide los 620
+     px enteros y le sobra sitio. La geometría no cambia ni un píxel: la
+     perspectiva sigue dentro del transform de la losa, donde estaba.
+
+     NO SE SUBE A `.tarjeta`. Ahí el aplanado pasaría a `.carrusel__pista` y
+     las cuatro piezas caerían en un mismo espacio 3D, ordenadas por
+     profundidad; quien manda en cuál va delante es el `zIndex` que escribe
+     `home.js`, y eso dejaría de valer. */
+  transform-style:preserve-3d;
+}
+
+/* Sin marco ni fondo: los derivados se componen sobre --void, el mismo
+   fondo de la página, justo para que la pieza flote en vez de vivir
+   dentro de una ficha. Dibujar aquí un borde devolvería el cuadrado que
+   costó quitar. */
+/* La cara frontal de la losa, adelantada medio grosor. Su `overflow`
+   es el que recorta la imagen al cuadrado, y por eso no puede llevar
+   hijos en 3D: los cantos son hermanos suyos, no hijos. */
+.tarjeta__marco{
+  position:relative;
+  aspect-ratio:1 / 1;
+  transform:translateZ(calc(var(--grosor) / 2));
+
+  /* AQUÍ NO PUEDE HABER RECORTE, Y ESTO COSTÓ ENCONTRARLO *(3 sep 2026)*.
+     Tenía `overflow:hidden`, y con él **la arista LEJANA de la cara
+     frontal no se pintaba**: el filete de la derecha del Cottage y el de
+     la izquierda del Ekko desaparecían, y una caja a la que le falta una
+     arista se lee como rota. Israel lo vio y lo describió exacto.
+
+     No es sub-píxel ni es el color: Chrome se come los últimos píxeles
+     PROYECTADOS del lado comprimido cuando el elemento recortado es el
+     que lleva la perspectiva. Comprobado con una franja verde de 100 px
+     pegada al borde: con `overflow:hidden` acaba 7 px antes del borde de
+     la losa, con `overflow:visible` llega hasta el final. Da igual cómo
+     se dibuje el filete —`border`, `outline`, `box-shadow` o un fondo—,
+     porque lo que falta es el recorte, no la línea. Y `overflow:clip`
+     hace exactamente lo mismo: no es cosa del contenedor de scroll.
+
+     El recorte al cuadrado no se pierde: lo hace `object-fit:cover`
+     sobre la propia imagen, que es donde dice la especificación que se
+     decide —el recorte de un elemento reemplazado lo manda el `overflow`
+     del reemplazado, no el de su padre—. Va declarado unas líneas más
+     abajo para no depender de que el navegador lo haga por su cuenta.
+
+     Quien vuelva a poner aquí un `overflow` romperá las aristas lejanas
+     de las dos piezas laterales sin un solo error en consola. */
+}
+/* Las cuatro aristas de la cara frontal. Va en un pseudoelemento y NO en
+   `box-shadow: inset`, que es como estaba: los inset se pintan por debajo
+   del contenido del elemento, así que la imagen se lo comía entero y solo
+   quedaban a la vista las aristas de los cantos —que no llevan contenido
+   dentro—. El resultado era un cubo con el grosor perfilado y la cara sin
+   perfilar, que es justo lo que chirriaba.
+
+   Esto revisa la sección 7 del brief, que pedía la pieza sin marco: sin
+   filete la losa no se lee sobre fondo negro, y el volumen era el encargo. */
+/* LA CARA LLEVA FONDO *(11 sep 2026, lo pidió Israel al verlo publicado)*.
+   Los derivados son WebP CON ALFA desde el 10 sep, así que una pieza
+   recortada —el reloj del Ekko, el Formentor— deja ver lo que hay detrás
+   de la losa: los puntos del suelo derivando. Al lado del Cottage y del
+   Terminator, que son escenas completas y llenan el cuadro, esas dos
+   tarjetas se leían HUECAS.
+
+   `--void` y no negro puro ni `--panel`, y no da igual cuál:
+
+   - `--panel` (#16161A) dibuja una caja gris que compite con la escena
+     azul del Terminator justo al lado, y aplana al Formentor, que ya es
+     gris.
+   - Negro puro se ve idéntico —son diez niveles— pero sería un color
+     nuevo fuera de la paleta.
+   - `--void` es EL MISMO fondo sobre el que estas piezas ya flotan en su
+     página de proyecto. La tarjeta y su destino enseñan la obra sobre la
+     misma superficie, que es justo lo que el despegue necesita: al final
+     del vuelo la losa se planta a sangre y le entrega la pantalla a la
+     portada, y por las zonas transparentes las dos enseñan lo mismo.
+
+   Esto NO revive el rectángulo negro de la sección 8: aquel estaba DENTRO
+   del archivo y viajaba con él a cualquier superficie. Este es el fondo de
+   un elemento, y el archivo sigue siendo transparente. */
+.tarjeta__marco{ background:var(--void) }
+.tarjeta__marco::after{
+  content:'';
+  position:absolute; inset:0;
+  /* SOMBRA INSET Y NO `border` *(13 sep 2026, lo vio Israel en Firefox)*.
+     Con `border`, Firefox dibuja este filete de 1 px como un marco blanco
+     GRUESO —cuñas que se ensanchan hacia el borde cercano— en las piezas
+     giradas hacia la derecha: el Ekko y el Hard surface. Chrome, bien. Y
+     solo con la tarjeta gráfica: Firefox sin ventana lo pinta correcto,
+     por eso no salía en las pruebas.
+
+     Aislado en Firefox 155 con GPU, quitando sospechosos uno a uno: sin
+     este filete desaparece; sin el `filter` de la imagen o sin los cantos,
+     sigue; sin la transición de color, sigue; con `outline`, sigue. Con
+     `box-shadow: inset` sale fino, quieto y en movimiento.
+
+     Esto NO contradice lo de arriba —"nunca `box-shadow: inset`"—: aquel
+     inset iba en el MARCO y la imagen se lo comía. Este va en el
+     pseudoelemento, que está encima de la imagen y no tiene contenido. */
+  box-shadow:inset 0 0 0 1px var(--filo);
+  pointer-events:none;
+}
+.tarjeta__marco img{
+  width:100%; height:100%;
+  object-fit:cover;
+  /* EL RECORTE AL CUADRADO VIVE AQUÍ, no en el marco: ver el porqué
+     arriba, en `.tarjeta__marco`. `clip` y no `hidden` porque no hace
+     falta un contenedor de scroll para esto y `hidden` crea uno. */
+  overflow:clip;
+  /* Cada ficha declara su punto de enfoque. El sujeto casi nunca está
+     en el centro geométrico de la imagen. */
+  object-position:var(--foco, 50% 50%);
+  /* Sin esto, arrastrar con el ratón en escritorio arranca el arrastre
+     nativo de imagen del navegador y se lleva el gesto por delante. */
+  -webkit-user-drag:none;
+  user-select:none;
+
+  /* Apagada de serie; al pasar el ratón se enciende y se ve el render tal
+     cual es. El filtro va en la IMAGEN y no en el cubo: así el filete y el
+     canto siguen a plena luz y lo que se enciende es la obra, no la caja.
+
+     Esto revisa el descarte de la sección 9 —"subir el brillo al pasar el
+     ratón"—, que se descartó porque levantaba el fondo del JPEG y volvía a
+     dibujar el cuadrado. Ya no aplica por dos motivos: la pieza vive dentro
+     de un cubo con filete declarado, así que el cuadrado está dibujado a
+     propósito; y aquí el reposo es más oscuro y el hover devuelve el
+     original, no lo sube por encima. */
+  filter:brightness(.45) saturate(.85);
+  transition:filter .5s var(--curva), opacity .55s var(--curva);
+}
+/* La central va siempre encendida, la señales o no: es la pieza que estás
+   mirando y apagarla al retirar el ratón la trataba como una más. Las
+   laterales se encienden solo al pasar por encima. */
+.tarjeta--activa .tarjeta__marco img,
+.tarjeta:hover .tarjeta__marco img{ filter:none }
+
+/* LA LOSA NO SE DIBUJA HASTA QUE TIENE SU OBRA DENTRO *(13 sep 2026, lo
+   vio Israel en la web publicada)*. Mientras la imagen viaja, la caja ya
+   estaba ahí entera: fondo `--void` sobre una página `--void`, o sea
+   invisible, y encima el filete claro de la cara y de los dos cantos. Lo
+   que se veía eran unas líneas blancas sueltas formando un rectángulo
+   vacío —y en el Ekko y el Hard surface, que son las dos últimas del
+   mazo, duraba lo suficiente para leerse como un fallo—. Al llegar la
+   imagen, aparecía de golpe: el destello.
+
+   Es el mismo argumento que dio fondo a la cara el 11 sep —una losa que
+   no enseña obra se lee HUECA—, un paso más atrás: entonces el hueco lo
+   abría el alfa del archivo, aquí lo abre que el archivo todavía no
+   está.
+
+   No se arregla con un relleno ni con un esqueleto gris, que sería
+   dibujar una pieza falsa donde va una de verdad. Se arregla al revés:
+   la caja no existe hasta que la obra existe, y las dos entran juntas.
+   Mientras tanto en su sitio no hay nada — el título y las etiquetas de
+   abajo ya dicen que ahí viene una pieza.
+
+   LA CLASE VA EN EL MARCO Y NO EN LA TARJETA, y no es indiferente: el
+   despegue CLONA `.tarjeta__marco` para construir la cara que vuela
+   —ver más abajo—, y `cloneNode` se lleva las clases del nodo clonado,
+   no las de sus padres. Puesta en el `<li>`, el clon nacería con la obra
+   a opacidad cero y el vuelo saldría de una caja vacía.
+
+   Los dos cantos son HERMANOS del marco y van antes en el DOM, así que
+   no hay selector de hermano que llegue a ellos desde aquí: los alcanza
+   `:has()` desde la losa. Donde no lo haya, los cantos se pintan desde
+   el primer momento y se recupera el comportamiento de antes, que es la
+   degradación correcta —nunca al revés—.
+
+   La pieza sin render se la pone el JS al montar: no tiene `<img>` a la
+   que esperar, y su recuadro de "Render pendiente" sí tiene que verse. */
+.tarjeta__marco img{ opacity:0 }
+.tarjeta__marco--puesta img{ opacity:1 }
+.tarjeta__canto{
+  border-color:transparent;
+  transition:border-color .55s var(--curva);
+}
+.tarjeta__losa:has(> .tarjeta__marco--puesta) .tarjeta__canto{
+  border-color:var(--filo);
+}
+/* El filete de la cara es sombra y no borde —ver `.tarjeta__marco::after`—,
+   así que se enciende por su propia propiedad. */
+.tarjeta__marco::after{
+  box-shadow:inset 0 0 0 1px transparent;
+  transition:box-shadow .55s var(--curva);
+}
+.tarjeta__marco--puesta::after{
+  box-shadow:inset 0 0 0 1px var(--filo);
+}
+
+/* ---- El clip de la pieza -------------------------------
+   Encima de la miniatura y debajo del velo de "Ver proyecto". Aparece
+   cuando su pieza es la elegida y el archivo tiene fotogramas; el JS pone
+   `--listo` y `.tarjeta--activa` la pone el carrusel al llegar al centro,
+   así que hacen falta las dos. */
+.tarjeta__clip{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  /* Llena el bloque, igual que la miniatura de debajo. El archivo ya se
+     exporta cuadrado —ver `derivados.ps1`—, así que aquí `cover` no llega
+     a recortar nada: está para que un clip futuro con otra proporción
+     llene el marco igual en vez de dejar bandas.
+
+     Hubo una versión a 1,5:1 con `contain`, que enseñaba más ancho de
+     escena a cambio de dos bandas. Se cambió por dos motivos: la tarjeta
+     quedaba hueca al lado de las otras tres, y llenando el bloque el
+     navegador tenía que ampliar la imagen un 1,47x. */
+  object-fit:cover;
+  /* Igual que la miniatura: el recorte lo lleva el propio reemplazado,
+     porque el marco ya no puede recortar. Ver `.tarjeta__marco`. */
+  overflow:clip;
+  background:var(--void);
+  opacity:0;
+  transition:opacity .5s var(--curva);
+  /* El clic tiene que llegar al enlace que hay debajo: sobre el vídeo se
+     sigue navegando al proyecto, y el arrastre del carrusel sigue
+     funcionando aunque empiece encima de la imagen en movimiento. */
+  pointer-events:none;
+  -webkit-user-drag:none;
+  user-select:none;
+}
+.tarjeta--activa .tarjeta__clip--listo{ opacity:1 }
+
+/* Una pieza futura puede entrar en las fichas antes de tener render.
+   No rompe el carrusel: ocupa su cuadrado y lo dice. */
+.tarjeta__falta{
+  position:absolute; inset:0;
+  display:grid; place-content:center; gap:10px; text-align:center;
+  border:1px dashed var(--line);
+  color:var(--mute);
+  padding:24px;
+}
+
+/* "Ver proyecto". Solo lo lleva la pieza central, y solo si tiene página:
+   en una lateral el clic la trae al centro y en el Cupra no hay adónde ir,
+   así que ahí el rótulo sería mentira. Por eso se pinta desde el JS solo
+   cuando toca, y no se apaga con un selector.
+
+   El velo tiene tope. Es lo único que oscurece a la central, que ya va
+   encendida de por sí, así que pasado el ~40% el gesto de señalarla se
+   lee como apagarla en vez de como ofrecer un destino. A 32% se nota que
+   aparece una capa sin que la pieza se hunda. Lo que sostiene la lectura
+   del texto sobre un render claro —el cielo del Cottage— es la sombra del
+   propio texto, no el velo. */
+.tarjeta__ver{
+  position:absolute; inset:0;
+  display:grid; place-content:center;
+  background:color-mix(in srgb, var(--void) 32%, transparent);
+  color:var(--paper);
+  opacity:0;
+  /* Rápido, pero degradado: ni aparece de golpe ni se hace esperar. */
+  transition:opacity .28s var(--curva);
+  pointer-events:none;
+}
+.tarjeta__ver span{
+  font-size:calc(12px * var(--tipo));
+  padding-bottom:7px;
+  border-bottom:1px solid var(--filo);
+  text-shadow:0 1px 10px rgba(0,0,0,.92);
+}
+.tarjeta--activa:hover .tarjeta__ver{ opacity:1 }
+
+/* El suelo bajo la pieza. Apagado; se enciende solo en la central. */
+.tarjeta__suelo{
+  height:1px; background:var(--line);
+  transition:background .5s var(--curva), box-shadow .5s var(--curva);
+}
+.tarjeta--activa .tarjeta__suelo{
+  background:var(--acento);
+  box-shadow:0 0 22px 1px color-mix(in srgb, var(--acento) 45%, transparent);
+}
+
+/* El pie se lee en todas. Se llegó a ocultar en las laterales, pero eso
+   arreglaba un problema que creaban los parámetros anteriores —solape de
+   0,24 anchos y escala 0,80— y no el diseño: con la separación de la
+   referencia hay hueco entre tarjetas y el pie va sin girar, así que ni
+   choca ni queda escorzado. En la referencia los tres pies miden lo mismo
+   de brillo, 148 contra 149: no se apagan. */
+/* El aire de aquí no es estético: es la reserva para la esquina baja de la
+   pieza girada, que baja --vuelo por debajo de su caja. Con los 16px de
+   antes, la losa se comía el título. */
+.tarjeta__pie{ padding-top:calc(var(--vuelo) + 8px) }
+
+.tarjeta__titulo{
+  font-family:var(--mono); font-weight:500;
+  font-size:calc(clamp(14px,1.35vw,18px) * var(--tipo));
+  letter-spacing:.04em; line-height:1.4;
+  transition:color .35s;
+}
+.tarjeta--activa .tarjeta__titulo{ color:var(--acento) }
+
+/* El crédito compartido va visible y no en letra pequeña. */
+.tarjeta__credito{
+  font-family:var(--mono); font-size:calc(10px * var(--tipo)); letter-spacing:.14em;
+  text-transform:uppercase;
+  color:color-mix(in srgb, var(--acento) 78%, var(--mute));
+  margin-top:6px;
+}
+
+/* Las etiquetas salen del campo `software` de la pieza, no de la lista
+   general de "Sobre mí" —esa lleva herramientas que no aparecen en
+   ninguna pieza publicada. */
+.tarjeta__software{
+  list-style:none;
+  display:flex; flex-wrap:wrap; gap:6px;
+  margin-top:14px;
+}
+.tarjeta__software li{
+  font-family:var(--mono); font-size:calc(10px * var(--tipo)); letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--mute);
+  border:1px solid var(--line);
+  padding:4px 8px;
+  transition:color .45s var(--curva), border-color .45s var(--curva);
+}
+.tarjeta--activa .tarjeta__software li{
+  color:color-mix(in srgb, var(--texto) 72%, transparent);
+  border-color:color-mix(in srgb, var(--acento) 26%, var(--line));
+}
+
+/* ---- El despegue de la pieza ---------------------------
+   *(4 sep 2026)* Al pulsar la pieza que está al frente, la losa da una
+   vuelta entera sobre su eje mientras viene hacia la cámara, se planta a
+   sangre y le entrega la pantalla a la página del proyecto. El recorrido
+   lo escribe `home.js` frame a frame —igual que el carrusel, y por lo
+   mismo: el tamaño aparente no es lineal en el tiempo—; aquí solo vive
+   la pinta.
+
+   VIVE FUERA DE `.carrusel__escena`, en una capa fija al final del
+   `<body>`, y no es un capricho: la escena recorta y encima lleva
+   máscara por los lados. Una pieza que crece hasta llenar la ventana
+   desde dentro de esa caja se corta en el primer fotograma.
+
+   La cara es EL CLON DEL `.tarjeta__marco` de verdad, no una maqueta
+   nueva: así el filete, el velo de "Ver proyecto" y el clip vienen con
+   sus reglas puestas y no hay una segunda versión de la tarjeta que se
+   quede vieja en silencio. Lo que cambia en vuelo se corrige aquí. */
+.despegue{
+  position:fixed; inset:0;
+  z-index:60;                  /* por encima de la barra, que está en 40 */
+  pointer-events:none;
+  /* Los tokens de la losa viven en `.carrusel` y aquí no llega la
+     herencia: se vuelven a declarar, no se copian desde el JS. */
+  --filo:var(--paper);
+  --grosor:0px;
+  --volumen:1;                 /* cuánto queda del cuerpo de la caja */
+  --rotulo:0;                  /* el velo de "Ver proyecto", que se retira */
+  --clip:1;
+  /* NADA DE `overflow` NI DE `contain:paint` AQUÍ. Es el mismo recorte
+     que se comía la arista lejana del carrusel; aquí se comería el canto
+     de la pieza en pleno giro. Y por lo mismo, la cadena entera va en
+     preserve-3d hasta el `<body>`: la cara va adelantada medio grosor y
+     proyecta por fuera de la caja que la contiene. */
+  transform-style:preserve-3d;
+}
+.despegue__caja{
+  position:absolute; top:0; left:0;
+  transform-origin:0 0;
+  transform-style:preserve-3d;
+  /* La caja cambia de FORMA, no solo de tamaño: de cuadrada a la
+     proporción de la ventana. Por eso su ancho y su alto se escriben de
+     verdad y no se fingen con un `scale`, que deformaría el render — y
+     un render no se enseña deformado ni un poco. El `object-fit:cover`
+     de la imagen es el que reencuadra, igual que en la portada de
+     destino. */
+  will-change:width, height, transform;
+}
+.despegue__losa{
+  position:absolute; inset:0;
+  transform-origin:50% 50%;
+  transform-style:preserve-3d;
+  will-change:transform;
+}
+/* La espalda, que en la tarjeta no existe porque nunca se da la vuelta.
+   Sin ella, a mitad del giro se vería el render ESPEJADO. Es una cara
+   oscura con el mismo filete: la caja se lee como maciza, que es lo que
+   el canto ya venía prometiendo. */
+.despegue__espalda{
+  position:absolute; inset:0;
+  background:var(--void);
+  border:1px solid var(--filo);
+  transform:translateZ(calc(var(--grosor) / -2)) rotateY(180deg);
+  backface-visibility:hidden;
+  opacity:var(--volumen);
+}
+/* El cuerpo de la caja se disuelve en el último tramo: la portada de
+   destino no tiene ni filete ni canto. Va con `--grosor` a cero, así que
+   al aterrizar la cara mide EXACTAMENTE la ventana — si se quedara
+   adelantada medio grosor llegaría un 3% ampliada y el relevo saltaría. */
+.despegue__espalda,
+.despegue .tarjeta__canto{ opacity:var(--volumen) }
+.despegue .tarjeta__marco::after{ opacity:var(--volumen) }
+
+.despegue .tarjeta__marco{
+  position:absolute; inset:0;
+  /* Deja de ser cuadrada: la forma la manda la caja. */
+  aspect-ratio:auto;
+  /* Sin esto, al pasar de 90° se vería la cara desde atrás además de la
+     espalda. */
+  backface-visibility:hidden;
+}
+/* En la tarjeta la obra va apagada en reposo y la enciende `.tarjeta--activa`,
+   que aquí no existe: sin esto la pieza despegaría a brillo 0,45. */
+.despegue .tarjeta__marco img{ filter:none }
+/* Y sin transición: el clip se retira en el fotograma en que la cara
+   está de canto, que es un instante. Con el medio segundo que lleva en
+   la tarjeta, medio vídeo se vería por encima del render al volver la
+   cara a la vista. */
+.despegue .tarjeta__clip{ opacity:var(--clip); filter:none; transition:none }
+/* El rótulo ha hecho su trabajo en cuanto lo pulsas: se va enseguida,
+   pero se va, no desaparece en el fotograma cero. */
+.despegue .tarjeta__ver{ opacity:var(--rotulo); transition:none }
+
+/* Y el índice se retira para que la pieza vuele sola. La malla NO se
+   toca: es el suelo, y la página de destino monta la misma con la misma
+   temperatura —ya la tiene puesta, porque la pone la pieza elegida—, así
+   que el fondo cruza sin enterarse. */
+body.despegando .nav,
+body.despegando main{
+  opacity:0;
+  transition:opacity .34s var(--curva);
+  pointer-events:none;
+}
+
+/* ---- Mando: flechas y puntos ---------------------------- */
+
+.carrusel__mando{
+  display:flex; align-items:center; justify-content:center;
+  gap:clamp(16px,3vw,34px);
+  margin-top:clamp(30px,5vh,58px);
+}
+
+.carrusel__flecha{
+  width:44px; height:44px;
+  display:grid; place-content:center;
+  border:1px solid var(--line);
+  color:var(--mute);
+  cursor:inherit;
+  transition:color .35s, border-color .35s, opacity .35s;
+}
+.carrusel__flecha svg{
+  width:18px; height:18px;
+  fill:none; stroke:currentColor; stroke-width:1.4;
+  stroke-linecap:round; stroke-linejoin:round;
+}
+.carrusel__flecha:hover:not(:disabled){
+  color:var(--acento);
+  border-color:color-mix(in srgb, var(--acento) 38%, transparent);
+}
+/* En los extremos se para. Apagada y no pulsable, no escondida: si
+   desapareciera, el mando entero saltaría de sitio a cada paso. */
+.carrusel__flecha:disabled{ opacity:.26 }
+
+/* Puntos en filete, no en círculo: es la voz de la interfaz. El botón
+   es más alto que la raya para que el dedo lo acierte. */
+.carrusel__puntos{
+  list-style:none;
+  display:flex; align-items:center; gap:10px;
+}
+.carrusel__puntos button{
+  display:block; position:relative;
+  width:26px; height:24px;
+  cursor:inherit;
+}
+.carrusel__puntos button::after{
+  content:''; position:absolute;
+  left:0; right:0; top:50%;
+  height:1px; background:var(--line);
+  transition:background .4s var(--curva), box-shadow .4s var(--curva);
+}
+.carrusel__puntos button:hover::after{ background:var(--mute) }
+.carrusel__puntos button[aria-current='true']::after{
+  background:var(--acento);
+  box-shadow:0 0 12px color-mix(in srgb, var(--acento) 55%, transparent);
+}
+
+/* Con una sola pieza en el mazo no hay nada que mandar. */
+.carrusel__mando[hidden]{ display:none }
+
+@media (max-width:860px){
+  .carrusel{
+    --tarjeta:min(74vw, 320px);
+    /* A 390 px no caben a la vez una tarjeta que se lea y el hueco de la
+       referencia: con --sep 1,13 la siguiente pieza se sale entera de la
+       pantalla y nada dice que se pueda deslizar. Se cierra el paso para
+       que asome. El ángulo no se toca, que es lo que sostiene la lectura
+       de pasillo. */
+    --sep:0.80;
+  }
+  /* Y al cerrarlo vuelve el choque de pies, porque las cajas se montan.
+     En un móvil se ve una tarjeta: con un pie basta. */
+  .tarjeta__pie{
+    opacity:0;
+    transition:opacity .5s var(--curva);
+  }
+  .tarjeta--activa .tarjeta__pie{ opacity:1 }
+}
+
+@media (prefers-reduced-motion: reduce){
+  /* `--curva` ya es una curva sin rebote, así que el requisito se
+     cumple de serie; aquí solo se acorta y se deja lineal.
+     `.tarjeta` y `.tarjeta__losa` ya no están en la lista: no tienen
+     transición que acortar. Su movimiento lo apaga el JS, que con
+     reduced-motion planta la pieza en el destino sin recorrido. */
+  .tarjeta__marco img,
+  .tarjeta__marco::after,
+  .tarjeta__canto,
+  .tarjeta__ver{ transition-duration:.18s; transition-timing-function:linear }
+}
+
+/* ---- Capítulo 02 · sobre mí ----------------------------- */
+
+.sobre{
+  display:grid;
+  grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  gap:clamp(40px,6vw,96px);
+  align-items:start;
+}
+@media (max-width:860px){ .sobre{ grid-template-columns:1fr } }
+
+.software{ display:grid; gap:26px }
+.software__grupo{ border-top:1px solid var(--line); padding-top:14px }
+.software__titulo{ color:var(--mute); margin-bottom:10px }
+.software__lista{
+  list-style:none;
+  display:flex; flex-wrap:wrap; gap:10px 18px;
+  font-family:var(--mono); font-size:calc(13px * var(--tipo)); letter-spacing:.03em;
+}
+.software__lista li{ display:inline-flex; align-items:center; gap:7px }
+
+/* El icono se pinta como MÁSCARA, no como imagen: el archivo aporta la
+   silueta y el color lo pone la paleta. Dos cosas se resuelven de una:
+   los logos de trazo negro —Maya, V-Ray— dejan de ser invisibles sobre el
+   fondo, y la sección 4 se sostiene, porque no entran doce colores de
+   marca de golpe. La contrapartida es que el archivo TIENE que traer
+   fondo transparente: un icono de aplicación con su baldosa opaca
+   enmascara como un cuadrado sólido.
+
+   Los logos están pensados para funcionar a un solo color, así que la
+   silueta sigue siendo reconocible.
+
+   OJO con la ruta: la imagen de la máscara la pone el JS en el `style` del
+   propio elemento, y no aquí a través de una custom property. Un `url()`
+   dentro de una custom property se resuelve contra la hoja de estilos
+   donde se USA el `var()`, no contra el documento — y esta hoja vive en
+   `assets/css/`, así que `assets/iconos/maya.svg` acababa buscándose en
+   `assets/css/assets/iconos/`. En un `style` inline se resuelve contra el
+   documento, que es lo que las rutas de datos.js esperan. */
+.software__icono{
+  width:16px; height:16px; flex:none;
+  background:var(--mute);
+  -webkit-mask-position:center;  mask-position:center;
+  -webkit-mask-size:contain;     mask-size:contain;
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  transition:background .4s var(--curva);
+}
+.software__grupo:hover .software__icono{ background:var(--texto) }
+/* Va ENCIMA de la lista (26 ago 2026), como rótulo del bloque y no como pie.
+   Sin filete propio: el primer grupo ya trae `border-top`, y poner aquí un
+   `border-bottom` dibujaba dos líneas paralelas separadas por el hueco de la
+   rejilla. El peso 600 se carga aparte en el `<link>` de Google Fonts; sin
+   él, el navegador engorda la 400 a mano y en monoespaciada se nota. */
+.software__nota{
+  color:var(--mute); font-size:calc(13.5px * var(--tipo)); font-weight:600; line-height:1.65;
+  margin-bottom:18px;
+}
+
+/* ---- Capítulo 03 · contacto ----------------------------- */
+
+.contacto__email{
+  display:inline-block;
+  font-family:var(--mono); font-weight:500;
+  font-size:calc(clamp(20px,3.4vw,44px) * var(--tipo));
+  letter-spacing:.01em;
+  padding-bottom:6px;
+  background-image:linear-gradient(var(--acento),var(--acento));
+  background-repeat:no-repeat;
+  background-position:0 100%;
+  background-size:0% 1px;
+  transition:background-size .6s var(--curva), color .4s;
+}
+.contacto__email:hover{ color:var(--acento); background-size:100% 1px }
+
+/* El teléfono. Mismo subrayado que crece que el email, para que se lean
+   como la misma familia de cosa, pero en secundario: el email es la
+   llamada a la acción y este acompaña. */
+.contacto__tel{
+  display:inline-block;
+  margin-top:14px;
+  font-size:calc(clamp(13px,1.5vw,17px) * var(--tipo));
+  color:var(--mute);
+  padding-bottom:5px;
+  background-image:linear-gradient(var(--acento),var(--acento));
+  background-repeat:no-repeat;
+  background-position:0 100%;
+  background-size:0% 1px;
+  transition:background-size .6s var(--curva), color .4s;
+}
+.contacto__tel:hover{ color:var(--acento); background-size:100% 1px }
+
+.contacto__enlaces{
+  list-style:none;
+  margin-top:clamp(40px,6vh,72px);
+  border-top:1px solid var(--line);
+  max-width:620px;
+}
+.contacto__enlaces li{ border-bottom:1px solid var(--line) }
+.contacto__enlaces a,
+.contacto__enlaces span{
+  display:flex; align-items:baseline; justify-content:space-between; gap:20px;
+  padding:18px 2px;
+  transition:color .35s, padding-left .45s var(--curva);
+}
+.contacto__enlaces a:hover{ color:var(--acento); padding-left:12px }
+.contacto__enlaces .pendiente{ color:var(--mute) }
+.contacto__flecha{ font-family:var(--mono); font-size:calc(12px * var(--tipo)); color:var(--mute) }
+.contacto__enlaces a:hover .contacto__flecha{ color:var(--acento) }
+
+.pie{
+  display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  margin-top:clamp(56px,9vh,110px);
+  padding-top:20px;
+  border-top:1px solid var(--line);
+  color:var(--mute);
+}

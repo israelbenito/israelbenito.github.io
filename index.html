@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Israel Benito — 3D Artist · Props & Environments</title>
+<meta name="description" content="Portfolio of Israel Benito, 3D artist based in Logroño, Spain. Props, assets and environments for games, film, animation and advertising.">
+<meta name="color-scheme" content="dark">
+
+<meta name="theme-color" content="#0A0A0C">
+
+<!-- EL ICONO DE LA PESTAÑA. Dos juegos y no uno, y es a propósito: los
+     tamaños pequeños llevan la marca PLANA y los grandes el metal.
+     A 16 px el degradado metálico empasta los huecos del monograma y lo
+     deja en una mancha gris — comprobado ampliando los cuatro candidatos.
+     Plano y al 92% del cuadro es lo único que se lee a ese tamaño; a 180
+     el metal es la marca y se ve entero.
+     Se generan desde `assets/logo.glb`: ver la sección 7 del brief. -->
+<link rel="icon" type="image/png" sizes="32x32" href="assets/marca/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/marca/favicon-16.png">
+<link rel="apple-touch-icon" href="assets/marca/apple-touch-icon.png">
+
+<!-- LA TARJETA AL COMPARTIR EL ENLACE. `og:image` y `og:url` TIENEN que
+     ser absolutas: una ruta relativa no la resuelve ningún previsualizador,
+     y la tarjeta sale sin miniatura. Si el dominio cambia, es esta cadena
+     en los cinco HTML. -->
+<meta property="og:title" content="Israel Benito — 3D Artist · Props &amp; Environments">
+<meta property="og:description" content="Props, assets and environments for games, film, animation and advertising.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Israel Benito">
+<meta property="og:locale" content="en">
+<meta property="og:url" content="https://israelbenito.github.io/">
+<meta property="og:image" content="https://israelbenito.github.io/assets/marca/og-portada.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The IB monogram in metal, floating in a dark room lit by amber neon.">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/home.css">
+
+<script>
+  /* La clase 'js' se pone aquí, antes del primer pintado, para que
+     no se vea el contenido un instante y luego desaparezca.
+     Si el módulo no llega a arrancar en 3s, se retira y la home se
+     ve entera: más vale sin animación que en negro. */
+  document.documentElement.classList.add('js');
+
+  /* La home abre siempre por la intro. Dos cosas la sacaban de ahí:
+     la restauración de scroll del navegador al recargar, y el ancla
+     de la URL —#work, que es lo que dejan los enlaces de la
+     barra al pulsarlos—. Del ancla se encarga aquí, en la cabecera,
+     antes de que el destino exista: si el salto se cancela más
+     tarde ya no sirve, porque Chrome no lo hace al cargar sino
+     cuando la maquetación se asienta, y la página se quedaba quieta
+     en la sala seis segundos y luego se iba sola hacia abajo.
+     Los enlaces de la barra siguen funcionando: eso es un clic
+     dentro de la página, no una carga. */
+  if('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  if(location.hash) history.replaceState(null, '', location.pathname + location.search);
+
+  setTimeout(function(){
+    var r = document.documentElement;
+    if(!r.classList.contains('listo')) r.classList.remove('js');
+  }, 3000);
+</script>
+</head>
+<body>
+
+<!-- El suelo de puntos. Va FIJO y detrás de toda la home, no dentro de
+     un capítulo: así la página entera es un espacio y no cuatro cajas.
+     Lo que se mueve es la cámara, con el scroll.
+
+     No recibe el ratón — el módulo escucha el puntero en la ventana,
+     porque el lienzo está debajo de toda la interfaz y nunca le
+     llegaría el evento. Sin JS es un elemento vacío y no pasa nada. -->
+<canvas class="malla" id="malla" aria-hidden="true"></canvas>
+
+<nav class="nav">
+  <!-- El hueco es la casilla donde aterriza el logo. El texto IB se
+       queda a su lado, siempre: es además lo que leen los lectores
+       de pantalla y lo único que se ve si no hay WebGL. -->
+  <a class="nav__marca" href="#intro" aria-label="Israel Benito — home">
+    <span class="nav__marca-hueco"><canvas id="marca-canvas" aria-hidden="true"></canvas></span>
+    <span class="nav__marca-txt">IB</span>
+  </a>
+  <div class="nav__enlaces mono">
+    <a href="#work">01 · Work</a>
+    <a href="#about" class="oculta-movil">02 · About</a>
+    <a href="#contact">03 · Contact</a>
+    <a href="#contact" class="nav__cv" id="nav-cv" aria-disabled="true">CV</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- 00 · Intro ------------------------------------------------
+       La sala está construida en WebGL, no es una imagen. Nunca
+       bloquea: el botón "Entrar" está desde el primer frame. -->
+  <section class="sala" id="intro" aria-label="Intro">
+    <canvas id="sala-canvas"></canvas>
+    <div class="sala__velo"></div>
+    <p class="hud hud--tl mono">Israel Benito</p>
+    <!-- En estrecho se queda solo "3D Artist": ver el porque, con las medidas,
+         en home.css. El posicionamiento completo sigue en el capitulo 02 y en
+         la descripcion de la pagina. -->
+    <p class="hud hud--tr mono">3D Artist<span class="hud__extra"> · Prop Artist · Environment Artist</span></p>
+    <p class="hud hud--bl mono">Maya · Substance Painter · Arnold<br>Logroño, Spain</p>
+    <button class="sala__entrar mono" type="button">Enter</button>
+  </section>
+
+  <!-- 01 · Trabajos ---------------------------------------------
+       Una sola vía, no bifurcación. El filtro es discreto, para
+       quien quiera acotar. -->
+  <section class="capitulo" id="work" aria-labelledby="t-work">
+    <header class="cabecera">
+      <div class="cabecera__linea">
+        <span class="cabecera__num" data-num="01">01</span>
+        <h2 class="cabecera__titulo" id="t-work">Work</h2>
+      </div>
+      <div class="cabecera__filete" data-revelar="filete"></div>
+      <div class="cabecera__pie">
+        <p class="mono mute">Selected work</p>
+        <div class="filtro mono" role="group" aria-label="Filter by discipline">
+          <button type="button" data-filtro="todos" aria-pressed="true">All</button>
+          <button type="button" data-filtro="entorno" aria-pressed="false">Environments</button>
+          <button type="button" data-filtro="props" aria-pressed="false">Props</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Carrusel en perspectiva: la pieza central de frente y grande,
+         las laterales giradas hacia dentro y más pequeñas. El andamiaje
+         es lo único fijo; las tarjetas, los puntos y los topes de las
+         flechas los pone el JS contando el mazo. Sin bucle: se para en
+         los extremos, y en ninguna parte hay un 4 escrito a mano. -->
+    <div class="carrusel" id="carrusel" data-revelar>
+      <div class="carrusel__escena">
+        <ol class="carrusel__pista" id="carrusel-pista"></ol>
+      </div>
+
+      <div class="carrusel__mando">
+        <button class="carrusel__flecha" type="button" data-paso="-1" aria-label="Previous piece">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20"/></svg>
+        </button>
+        <ol class="carrusel__puntos" id="carrusel-puntos"></ol>
+        <button class="carrusel__flecha" type="button" data-paso="1" aria-label="Next piece">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20"/></svg>
+        </button>
+      </div>
+
+      <!-- Las tarjetas laterales se ven, pero un lector de pantalla no
+           sabe cuál está al frente. Esto se lo dice sin pintarlo. -->
+      <p class="sr" id="carrusel-estado" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- 02 · Sobre mí ---------------------------------------------
+       El listado de programas se declara en datos.js. Sin
+       rejilla de logos: un logo dice "he abierto esto". -->
+  <section class="capitulo" id="about" aria-labelledby="t-about">
+    <header class="cabecera">
+      <div class="cabecera__linea">
+        <span class="cabecera__num" data-num="02">02</span>
+        <h2 class="cabecera__titulo" id="t-about">About</h2>
+      </div>
+      <div class="cabecera__filete" data-revelar="filete"></div>
+    </header>
+
+    <div class="sobre">
+      <div>
+        <p class="prosa" data-revelar>
+          I'm a 3D artist specialising in production-ready props, assets and
+          environments: weapons, set dressing, vegetation, hard surface and
+          environment pieces.
+        </p>
+        <p class="prosa" data-revelar style="--retardo:120ms">
+          What interests me is building pieces that can drop straight into a
+          scene and behave: clean topology, tidy UVs, well-built materials and
+          textures that hold up in a close shot. I pay particular attention to
+          the balance between visual quality and solid, production-minded
+          construction.
+        </p>
+        <p class="prosa" data-revelar style="--retardo:240ms">
+          I also build full environments and scenes, from modelling and
+          composition through to lighting, making sure every element earns its
+          place in the final image.
+        </p>
+        <p class="prosa" data-revelar style="--retardo:360ms">
+          Based in Logroño, Spain, working on outsourced asset and environment
+          projects for games, film, animation and advertising.
+        </p>
+      </div>
+
+      <div>
+        <p class="software__nota mono" data-revelar>
+          Main software
+        </p>
+        <div class="software" id="software"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · Contacto ---------------------------------------------- -->
+  <section class="capitulo capitulo--contacto" id="contact" aria-labelledby="t-contact">
+    <header class="cabecera">
+      <div class="cabecera__linea">
+        <span class="cabecera__num" data-num="03">03</span>
+        <h2 class="cabecera__titulo" id="t-contact">Contact</h2>
+      </div>
+      <div class="cabecera__filete" data-revelar="filete"></div>
+    </header>
+
+    <a class="contacto__email" id="email" href="#" data-revelar></a>
+
+    <!-- El teléfono va DEBAJO del email y más pequeño, no a su lado: el
+         email es la llamada a la acción y dos líneas del mismo tamaño no
+         serían dos opciones, serían una duda.
+
+         El envoltorio no sobra. El email es `inline-block` para que su
+         subrayado al pasar el ratón mida lo que mide el texto y no la
+         columna entera; un hermano también `inline-block` se le pone al
+         lado en la misma línea. El div rompe la línea, y el enlace de
+         dentro conserva su ancho ajustado y su propio subrayado. -->
+    <div data-revelar style="--retardo:70ms">
+      <a class="contacto__tel mono" id="telefono" href="#"></a>
+    </div>
+
+    <ul class="contacto__enlaces" id="enlaces" data-revelar style="--retardo:140ms"></ul>
+
+    <div class="pie mono">
+      <span>Logroño, Spain</span>
+      <span>© <span id="anio"></span> Israel Benito</span>
+    </div>
+  </section>
+
+</main>
+
+<noscript>
+  <div style="padding:40px;font-family:monospace;line-height:2">
+    This site needs JavaScript for the work index.<br>
+    In the meantime: <a href="https://israelbenito.artstation.com/" style="color:#FF8A2B">ArtStation</a>
+    · <a href="mailto:infoisraelbenito@gmail.com" style="color:#FF8A2B">infoisraelbenito@gmail.com</a>
+  </div>
+</noscript>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script type="module" src="assets/js/home.js"></script>
+<script>document.getElementById('anio').textContent = new Date().getFullYear();</script>
+</body>
+</html>

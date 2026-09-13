@@ -1,0 +1,307 @@
+/* =========================================================
+   BASE
+   Tokens, retícula tipográfica, cursor y revelados.
+   Lo que comparten la home y las páginas de proyecto.
+   ========================================================= */
+
+:root{
+  --void:   #0A0A0C;
+  --panel:  #16161A;
+  --line:   #2A2A2E;
+  --mute:   #85837C;
+  --paper:  #F3F1EC;
+  --signal: #FF8A2B;
+
+  /* La cáscara adaptativa de las páginas de proyecto sobrescribe
+     estas tres. En la home mandan los tokens de arriba. */
+  --fondo: var(--void);
+  --texto: var(--paper);
+  --acento: var(--signal);
+
+  /* LA ESCALA DEL TEXTO *(13 sep 2026, lo pidió Israel: "se ven pequeños")*.
+     Cada `font-size` de la web va multiplicado por esto, así que el tamaño
+     de toda la tipografía se afina aquí y en ningún otro sitio. 1.1 es el
+     10% que se pidió. Lo que se mide en `em` lo hereda solo.
+
+     Y a la vez `--mute` y `--paper` subieron un 10% de CONTRASTE contra
+     `--void`, medido con la fórmula de WCAG y no a ojo: el gris secundario
+     de 4,74 a 5,21 y el blanco de 15,98 a 17,52 —ahí 8 bits por canal no
+     dan para más—. Mismo matiz: se escala la luz de los tres canales por
+     igual. Los `paleta.texto` de las fichas subieron con la misma regla. */
+  --tipo: 1.1;
+
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --texto-corrido: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Ritmo lento y cinematográfico. Nada de rebotes. */
+  --curva: cubic-bezier(.16,.84,.30,1);
+  --lento: 1.15s;
+
+  --margen: clamp(20px, 5vw, 88px);
+
+  /* En un monitor de 2560 la retícula sin techo convertía cada
+     pieza en una valla publicitaria. El contenido se centra a
+     partir de aquí; el fondo y la sala siguen a sangre. */
+  --ancho: 1680px;
+  --lateral: max(var(--margen), calc((100vw - var(--ancho)) / 2));
+}
+
+*{ margin:0; padding:0; box-sizing:border-box }
+
+html{
+  background:var(--fondo);
+  -webkit-text-size-adjust:100%;
+}
+@media (prefers-reduced-motion: no-preference){
+  html{ scroll-behavior:smooth }
+}
+
+body{
+  background:var(--fondo);
+  color:var(--texto);
+  font-family:var(--texto-corrido);
+  font-size:calc(16px * var(--tipo));
+  line-height:1.7;
+  overflow-x:hidden;
+  transition:background .9s var(--curva), color .9s var(--curva);
+}
+
+img{ display:block; max-width:100%; height:auto }
+a{ color:inherit; text-decoration:none }
+button{ font:inherit; color:inherit; background:none; border:0 }
+::selection{ background:var(--acento); color:#0A0A0C }
+
+/* ---- Retícula tipográfica -------------------------------
+   La monoespaciada es la voz de la interfaz y de los datos.
+   No se usa en párrafos largos: cansa. */
+
+.mono{
+  font-family:var(--mono);
+  font-size:calc(11px * var(--tipo));
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  font-weight:400;
+}
+.mute{ color:var(--mute) }
+
+/* Solo para lectores de pantalla. No `display:none` ni
+   `visibility:hidden`: eso también lo esconde de ellos. */
+.sr{
+  position:absolute; width:1px; height:1px;
+  margin:-1px; padding:0; border:0;
+  overflow:hidden; clip-path:inset(50%);
+  white-space:nowrap;
+}
+
+.prosa{
+  font-size:calc(clamp(16px, 1.15vw, 18px) * var(--tipo));
+  line-height:1.75;
+  max-width:62ch;
+  color:color-mix(in srgb, var(--texto) 82%, transparent);
+}
+.prosa + .prosa{ margin-top:1.2em }
+
+/* ---- Cursor ---------------------------------------------
+   Flecha de 29px, cuerpo negro con el filo encendido en ámbar.
+   Tres trazos superpuestos —halo ancho, halo intermedio, cuerpo—
+   porque el `cursor` de CSS no admite desenfoque. */
+
+body{
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 40 40'%3E%3Cpath d='M8 5 L8 30 L14.5 23.8 L18.8 33.5 L23.2 31.6 L19 22.2 L28 21.8 Z' fill='none' stroke='%23FF8A2B' stroke-width='5' stroke-linejoin='round' stroke-linecap='round' opacity='0.14'/%3E%3Cpath d='M8 5 L8 30 L14.5 23.8 L18.8 33.5 L23.2 31.6 L19 22.2 L28 21.8 Z' fill='none' stroke='%23FF8A2B' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round' opacity='0.32'/%3E%3Cpath d='M8 5 L8 30 L14.5 23.8 L18.8 33.5 L23.2 31.6 L19 22.2 L28 21.8 Z' fill='%2308090D' stroke='%23FFB16B' stroke-width='1.15' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") 6 4, auto;
+}
+
+/* Los efectos viven donde no hay obra. Sobre una imagen de
+   proyecto el cursor deja de encenderse: se queda en flecha
+   fina, sin halos. */
+.sobre-obra, .sobre-obra *{
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 40 40'%3E%3Cpath d='M8 5 L8 30 L14.5 23.8 L18.8 33.5 L23.2 31.6 L19 22.2 L28 21.8 Z' fill='%2308090D' stroke='%23E8E7E2' stroke-width='1.15' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") 5 3, pointer;
+}
+
+/* AQUÍ HUBO UN CURSOR-LUPA durante unas horas *(10 sep 2026)*: la flecha
+   fina con un `+` ámbar, y era lo único que anunciaba que un render de la
+   galería se podía ampliar, porque entonces el pulsable era la imagen
+   entera. Se retiró el 11 sep con esa versión — Israel prefirió un botón
+   visible en la esquina del render.
+   La lección que deja, por si vuelve a hacer falta: un cursor no es un
+   aviso, es una recompensa por acercarte. En táctil no existe. */
+
+@media (pointer: coarse){
+  body, body *, .sobre-obra, .sobre-obra *{ cursor:auto }
+}
+
+/* ---- Revelados ------------------------------------------
+   Cada sección se anima al entrar en pantalla. Una sola vez,
+   no cada vez que pasas. El texto sube y aparece; las
+   imágenes se revelan con máscara. */
+
+/* Todo lo revelable se esconde SOLO si el JS ha arrancado. Si el
+   módulo no carga, la home se ve entera en vez de quedarse en
+   negro con el contenido a opacidad cero. */
+.js [data-revelar]{
+  opacity:0;
+  transform:translateY(28px);
+  transition:opacity var(--lento) var(--curva), transform var(--lento) var(--curva);
+  transition-delay:var(--retardo, 0ms);
+}
+.js [data-revelar].visible{ opacity:1; transform:none }
+
+/* LA MÁSCARA RECORTA A LOS HIJOS, NO AL PROPIO ELEMENTO, y esto no es
+   una preferencia: es la única forma de que funcione.
+
+   Estaba escrita al revés —el `clip-path` en el mismo elemento que lleva
+   el atributo— y así NO SE REVELA NUNCA. Chrome tiene en cuenta el
+   `clip-path` del propio elemento al calcular la intersección, así que el
+   observador ve una caja de altura cero, decide que no está en pantalla y
+   no le pone la clase que la descubriría. Se esconde a sí misma de su
+   propio disparador.
+
+   No se había notado porque hasta el 27 ago 2026 esta variante no la
+   usaba nadie: el brief promete desde el principio que "las imágenes se
+   revelan con máscara" y en la web no había ni una. Se descubrió al
+   estrenarla en las páginas de proyecto.
+
+   Recortando a los hijos, el elemento observado conserva su caja entera y
+   el efecto es el mismo: lo que se ve es la imagen, no el hueco. */
+.js [data-revelar='mascara']{ opacity:1; transform:none }
+.js [data-revelar='mascara'] > *{
+  clip-path:inset(0 0 100% 0);
+  transition:clip-path 1.4s var(--curva);
+  transition-delay:var(--retardo, 0ms);
+}
+.js [data-revelar='mascara'].visible > *{ clip-path:inset(0 0 0 0) }
+
+
+/* Máscara + asentamiento. La misma cortina que `mascara`, pero la pieza
+   entra un punto más grande y se posa mientras se descubre. Es lo que
+   convierte "aparece una imagen" en "te la enseñan": el tamaño cambia
+   durante el revelado, así que el ojo sigue el movimiento hasta que
+   para. La escala tarda más que la cortina a propósito — la cortina
+   termina y la pieza sigue asentándose un instante.
+
+   El origen está por debajo del centro porque el peso visual de un
+   render suele estar abajo; asentando desde el 50% la pieza parece
+   subir, y aquí tiene que parecer posarse.
+
+   OJO: recorta y escala a los HIJOS, igual que `mascara`, y por el mismo
+   motivo —un `clip-path` en el propio elemento lo esconde de su propio
+   observador—. Y por eso el visor de pases lleva una pila intermedia:
+   si esta regla cayera sobre las capas, su `transition` de opacidad
+   —la que cruza de beauty a wireframe— quedaría machacada por esta. */
+.js [data-revelar='escala']{ opacity:1; transform:none }
+.js [data-revelar='escala'] > *{
+  clip-path:inset(0 0 100% 0);
+  transform:scale(1.055);
+  transform-origin:50% 64%;
+  transition:clip-path 1.5s var(--curva), transform 2.2s var(--curva);
+  transition-delay:var(--retardo, 0ms);
+}
+.js [data-revelar='escala'].visible > *{
+  clip-path:inset(0 0 0 0);
+  transform:none;
+}
+
+/* Filete que se traza solo al entrar el capítulo. */
+.js [data-revelar='filete']{
+  opacity:1;
+  transform:none;
+  transform-origin:left center;
+  scale:0 1;
+  transition:scale 1.5s var(--curva);
+  transition-delay:var(--retardo, 0ms);
+}
+.js [data-revelar='filete'].visible{ scale:1 1 }
+
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto }
+  .js [data-revelar],
+  .js [data-revelar='mascara'],
+  .js [data-revelar='mascara'] > *,
+  .js [data-revelar='escala'],
+  .js [data-revelar='escala'] > *,
+  .js [data-revelar='filete']{
+    opacity:1;
+    transform:none;
+    scale:1 1;
+    clip-path:none;
+    transition:none;
+    transition-delay:0ms !important;
+  }
+}
+
+/* ---- Foco visible ---------------------------------------
+   El cursor es ámbar, el foco de teclado también. */
+:focus-visible{
+  outline:1px solid var(--acento);
+  outline-offset:4px;
+}
+
+/* ---- El suelo de puntos ---------------------------------
+   El lienzo del fondo. Va FIJO y del tamaño de la ventana, no del
+   documento: así se pintan muchos menos píxeles y el movimiento lo pone
+   la cámara con el scroll.
+
+   Vive aquí y no en home.css porque lo montan las dos —la home y las
+   cuatro páginas de proyecto— y `montarMalla` dimensiona el canvas a lo
+   que mida su caja. Sin esta regla el elemento se queda en flujo, crece
+   con el documento, el documento crece con él, y acaba en 41 millones de
+   píxeles de lado con la página en blanco. Pasó.
+
+   z-index 0 y no -1: a -1 se iría por debajo del fondo del `body` y no
+   se vería. El contenido sube a 1. */
+/* EL ALTO SE CUELGA DE `lvh` Y NO DE `100%` *(13 sep 2026)*. En un
+   iPhone la barra de direcciones se pliega al bajar y se despliega al
+   subir, y con ella cambia el alto de la ventana: unos 69 px, medidos.
+   Un lienzo de `height:100%` sigue ese vaivén, y cada cambio de caja
+   dispara el `ResizeObserver` de `malla.js` → se reasigna
+   `canvas.width/height` —que BORRA el lienzo—, se rehace la retícula y
+   se tira el buffer de la estela. Scrolleando, eso ocurre una y otra
+   vez: el fondo parpadea y no llega a asentarse. Lo vio la novia de
+   Israel en su iPhone.
+
+   `100lvh` es el alto de la ventana con la barra plegada, o sea el
+   MAYOR de los dos, y no se mueve: la caja del lienzo pasa a ser
+   constante y el observador deja de dispararse al scrollear. Lo que se
+   paga es que con la barra desplegada los últimos píxeles del lienzo
+   quedan debajo de ella —invisibles, y el horizonte baja esos 69 px—,
+   que es mucho menos que verlo saltar en cada scroll.
+
+   El `height:100%` de antes se queda de reserva para donde no haya
+   `lvh` —iOS por debajo de 15.4—; allí sigue el comportamiento viejo,
+   amortiguado por la guardia de tamaño de `construir()`. */
+.malla{
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  height:100lvh;
+  display:block;
+  z-index:0;
+  pointer-events:none;
+}
+
+/* ---- Transición entre páginas ---------------------------
+   La sección 5 la pide desde el principio —"transición entre páginas
+   encadenada, no corte seco"— y estuvo bloqueada hasta el 27 ago 2026
+   por una razón sencilla: no había una segunda página a la que ir.
+
+   Se hace con View Transitions y son estas cuatro líneas: sin build, sin
+   framework y sin convertir la web en una aplicación de una sola página,
+   que es lo que la sección 9 descartó justo para no pagar este efecto.
+   Donde el navegador no lo soporte, la regla se ignora y la navegación
+   es la de siempre. No hay nada que degradar.
+
+   Va en base.css porque una transición entre dos páginas necesita que
+   LAS DOS la declaren: si solo la trae una, no ocurre. */
+@view-transition{ navigation:auto }
+
+/* El ritmo es el del resto de la web: lento y sin rebote. Por defecto
+   Chrome usa un cuarto de segundo y una curva propia. */
+::view-transition-old(root),
+::view-transition-new(root){
+  animation-duration:.55s;
+  animation-timing-function:var(--curva);
+}
+
+@media (prefers-reduced-motion: reduce){
+  /* Quien ha dicho que no quiere movimiento tampoco lo quiere entre
+     páginas. `navigation: none` desactiva el encadenado entero. */
+  @view-transition{ navigation:none }
+}

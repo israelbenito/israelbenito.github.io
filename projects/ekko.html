@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ekko Props · Arcane — Israel Benito</title>
+<meta name="description" content="Stylised Arcane props: sword, chronometer and hoverboard. Modelling and texturing.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0A0C">
+
+<!-- Iconos y tarjeta de compartir. El porque de los dos juegos de icono
+     esta en index.html; aqui las rutas suben un nivel. -->
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/marca/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../assets/marca/favicon-16.png">
+<link rel="apple-touch-icon" href="../assets/marca/apple-touch-icon.png">
+
+<meta property="og:title" content="Ekko Props · Arcane — Israel Benito">
+<meta property="og:description" content="Stylised Arcane props: sword, chronometer and hoverboard. Modelling and texturing.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Israel Benito">
+<meta property="og:locale" content="en">
+<meta property="og:url" content="https://israelbenito.github.io/projects/ekko.html">
+<meta property="og:image" content="https://israelbenito.github.io/assets/marca/og-portada.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/proyecto.css">
+
+<script>
+  /* Igual que en la home: la clase se pone antes del primer pintado para
+     que el contenido no se vea un instante y luego desaparezca. Si el
+     módulo no arranca en 3 s se retira y la página se ve entera —más
+     vale sin animación que en negro—. */
+  document.documentElement.classList.add('js');
+  setTimeout(function(){
+    var r = document.documentElement;
+    if(!r.classList.contains('listo')) r.classList.remove('js');
+  }, 3000);
+</script>
+</head>
+
+<!-- Lo ÚNICO propio de esta página es este id, el <title> y la
+     descripción. Todo lo demás lo pinta proyecto.js desde la ficha de
+     datos.js. Añadir una quinta pieza es copiar este archivo, cambiar
+     tres líneas y crear su ficha. -->
+<body data-proyecto="ekko">
+
+<canvas class="malla" id="malla" aria-hidden="true"></canvas>
+
+<nav class="nav">
+  <!-- El monograma en metal, el mismo que aterriza en la barra de la
+       home. CONVIVE con el texto "IB", no lo sustituye: el texto es lo
+       que leen los lectores de pantalla y lo único que se ve sin WebGL.
+       Lo monta `marca.js`; ver la sección 7 del brief. -->
+  <a class="nav__marca" href="../index.html" aria-label="Israel Benito — home">
+    <span class="nav__marca-hueco"><canvas id="marca-canvas" aria-hidden="true"></canvas></span>
+    <span class="nav__marca-txt">IB</span>
+  </a>
+  <div class="nav__enlaces mono">
+    <a href="#" data-a-home="#work">01 · Work</a>
+    <a href="#" data-a-home="#about" class="oculta-movil">02 · About</a>
+    <a href="#" data-a-home="#contact">03 · Contact</a>
+    <a href="#" class="nav__cv" id="nav-cv">CV</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ==============================================================
+       ACTO 0 · LA PORTADA
+       A sangre, a pantalla completa y con el título ENCIMA del render.
+
+       AHORA ES UNA PISTA DE SCROLL DE TRES PANTALLAS con la escena
+       CLAVADA dentro: se queda quieta mientras el render encoge de
+       tamaño completo a la mitad y, ya pequeño, se disuelve. Es el
+       gesto de apertura de sondaven.com, medido y adaptado — el porqué
+       y los números están en proyecto.css y en proyecto.js.
+
+       La escena conserva `data-revelar`, o sea el revelado de disparo:
+       está en pantalla desde que carga y no hay scroll que pueda
+       conducirla. Todo lo que viene por debajo va atado al scroll.
+       ============================================================== -->
+  <header class="portada" id="portada">
+    <div class="portada__fija">
+
+      <!-- Fuera del grupo que encoge: es la salida de la página, no
+           parte de la composición. Se queda donde está. -->
+      <div class="portada__salida">
+        <a class="volver mono" id="volver" href="../index.html#work"
+           data-revelar style="--retardo:560ms">
+          <span class="volver__flecha" aria-hidden="true">←</span><span>Back to work</span>
+        </a>
+      </div>
+
+      <!-- ESTO es lo que encoge, y encoge ENTERO: render, velo y
+           título a la vez. Si el título no encogiera con la imagen se
+           vería que son dos capas pegadas, que es justo lo que el
+           gesto tiene que disimular. -->
+      <div class="portada__grupo" id="portada-grupo">
+        <div class="portada__lienzo" id="portada-lienzo" data-revelar="escala"></div>
+        <div class="portada__velo" aria-hidden="true"></div>
+        <div class="portada__texto" id="portada-texto">
+          <h1 class="proyecto__titulo" id="titulo" data-revelar style="--retardo:680ms"></h1>
+          <ul class="proyecto__categorias" id="categorias" data-revelar style="--retardo:820ms"></ul>
+        </div>
+      </div>
+
+      <div class="portada__cue mono" id="portada-cue" aria-hidden="true">
+        <span>Scroll</span>
+        <i></i>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- LA FICHA TÉCNICA VA ANTES QUE LA GALERÍA. Contraintuitivo para un
+       artista, pero el lead ya vio el render en el índice: lo que quiere
+       saber aquí es si esto es serio. Sección 5 del brief.
+
+       Y es el respiro: pequeña y sobria justo detrás de la portada. -->
+  <section class="seccion" aria-labelledby="t-datos">
+    <div class="seccion__rotulo">
+      <span class="seccion__numero mono" aria-hidden="true"></span>
+      <h2 class="seccion__titulo" id="t-datos">Specs</h2>
+    </div>
+    <div class="seccion__filete"></div>
+    <dl class="datos" id="datos"></dl>
+    <p class="credito" id="credito"></p>
+  </section>
+
+  <section class="seccion" id="galeria" aria-labelledby="t-galeria">
+    <div class="seccion__rotulo">
+      <span class="seccion__numero mono" aria-hidden="true"></span>
+      <h2 class="seccion__titulo" id="t-galeria">Gallery</h2>
+    </div>
+    <div class="seccion__filete"></div>
+    <div class="video" id="video"></div>
+    <div class="galeria__lista" id="galeria-lista"></div>
+  </section>
+
+  <!-- EL TREN. Ver la cáscara del Terminator y la sección 7 del brief. -->
+  <section class="seccion" id="pases" aria-labelledby="t-pases">
+    <div class="pases__fija">
+      <div class="seccion__rotulo">
+        <span class="seccion__numero mono" aria-hidden="true"></span>
+        <h2 class="seccion__titulo" id="t-pases">Pass breakdown</h2>
+      </div>
+      <div class="seccion__filete"></div>
+      <p class="seccion__entrada prosa">Render passes</p>
+      <div class="pases__lista" id="pases-lista"></div>
+    </div>
+  </section>
+
+  <!-- Encadenado en bucle: nunca devuelve al índice. -->
+  <nav class="siguiente" id="siguiente" aria-label="Next project">
+    <a class="siguiente__enlace" id="siguiente-enlace" href="#">
+      <div class="siguiente__caja">
+        <img class="siguiente__img" id="siguiente-img" alt="">
+        <span class="siguiente__velo" aria-hidden="true"></span>
+        <div class="siguiente__texto">
+          <span class="mono mute siguiente__pie">Next project</span>
+          <span class="siguiente__titulo" id="siguiente-titulo"></span>
+        </div>
+      </div>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="pie mono">
+  <a id="pie-mail" href="#"></a>
+  <span>© <span id="anio"></span> Israel Benito</span>
+</footer>
+
+<!-- Three y el cargador de glb, SOLO para el monograma de la barra.
+     `defer` a propósito: la marca es lo último que importa de esta
+     página, y bloquear el pintado por un logo de 26 px sería absurdo.
+     Y quien llega por el carrusel de la home ya los tiene en caché,
+     que es por donde llega casi todo el mundo.
+
+     Si no cargan, `marca.js` no monta y la barra se queda con el texto
+     "IB" — que es lo que hacía hasta ahora. -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script defer src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script type="module" src="../assets/js/proyecto.js"></script>
+</body>
+</html>
